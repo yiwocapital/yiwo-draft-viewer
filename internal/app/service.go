@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"time"
 
@@ -200,4 +199,3 @@ func (s *Service) startWatcher(path string) {
 }
 
 // silence unused-import warning when fmt not referenced elsewhere.
-var _ = fmt.Sprintf

@@ -36,9 +36,6 @@ func main() {
 		runtime.EventsEmit(svc.Ctx(), "close-file")
 	})
 
-	editMenu := AppMenu.AddSubmenu("Edit")
-	editMenu.AddText("Copy", keys.CmdOrCtrl("c"), func(cd *menu.CallbackData) {})
-
 	viewMenu := AppMenu.AddSubmenu("View")
 	viewMenu.AddText("Refresh", keys.CmdOrCtrl("r"), func(cd *menu.CallbackData) {
 		runtime.EventsEmit(svc.Ctx(), "reload")

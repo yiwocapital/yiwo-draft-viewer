@@ -72,14 +72,14 @@ export function init() {
     if (s.multiSelect.length === 2) {
       const [a, b] = s.multiSelect;
       const res = await api.getDiff(a, b);
-      if (res.ok) setState({ diff: res.data });
+      if (res.ok) setState({ diff: res.data, charCount: res.data.charCount });
     } else {
       const idx = s.commits.findIndex((c) => c.hash === s.selected);
       if (idx < 0) return;
       const cur = s.commits[idx].hash;
       const prev = idx + 1 < s.commits.length ? s.commits[idx + 1].hash : "";
       const res = await api.getDiff(prev, cur);
-      if (res.ok) setState({ diff: res.data });
+      if (res.ok) setState({ diff: res.data, charCount: res.data.charCount });
     }
   }
 

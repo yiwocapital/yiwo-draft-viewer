@@ -33,6 +33,7 @@ async function openFile(path) {
     showToast(res.error);
     return;
   }
+  window.__currentPath = path;
   setState({
     loaded: true,
     hasGit: res.data.hasGit,
@@ -50,6 +51,29 @@ async function openFile(path) {
       multiSelect: [],
     });
   }
+}
+
+// Wails event listeners (from native macOS menu)
+if (window.runtime && window.runtime.EventsOn) {
+  window.runtime.EventsOn("open-file", (path) => {
+    openFile(path);
+  });
+  window.runtime.EventsOn("reload", () => {
+    // Trigger a manual refresh by re-opening current path
+    if (window.__currentPath) {
+      openFile(window.__currentPath);
+    }
+  });
+  window.runtime.EventsOn("close-file", () => {
+    // Reset to empty state
+    document.getElementById("app").classList.add("empty");
+    setState({
+      loaded: false, hasGit: false, hasFrontmatter: false,
+      title: "", summary: "", content: "", charCount: 0,
+      commits: [], selected: null, multiSelect: [],
+      diff: { segments: [], charCount: 0, static: false },
+    });
+  });
 }
 
 window.__openFile = openFile;
