@@ -17,4 +17,5 @@ export const api = {
   reload: () => call("Reload"),
   setFontSize: (size) => call("SetFontSize", size),
   getFontSize: () => call("GetFontSize"),
+  windowChanged: () => call("WindowChanged"),
 };

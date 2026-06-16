@@ -40,6 +40,31 @@ func (s *Service) Startup(ctx context.Context) {
 		s.cfg = cfg
 		s.currentFontSize = cfg.FontSize
 	}
+	go s.windowWatcher()
+}
+
+func (s *Service) windowWatcher() {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+	var lastW, lastH, lastX, lastY int = -1, -1, -1, -1
+	for {
+		select {
+		case <-ticker.C:
+			if s.ctx == nil {
+				continue
+			}
+			w, h := runtime.WindowGetSize(s.ctx)
+			x, y := runtime.WindowGetPosition(s.ctx)
+			if w != lastW || h != lastH || x != lastX || y != lastY {
+				lastW, lastH, lastX, lastY = w, h, x, y
+				s.cfg.Window.Width = w
+				s.cfg.Window.Height = h
+				s.cfg.Window.X = x
+				s.cfg.Window.Y = y
+				_ = config.Save(s.configDir, s.cfg)
+			}
+		}
+	}
 }
 
 func (s *Service) Ctx() context.Context {
@@ -216,6 +241,24 @@ func (s *Service) SetFontSize(size int) model.Result {
 
 func (s *Service) GetFontSize() int {
 	return s.cfg.FontSize
+}
+
+func (s *Service) WindowChanged() model.Result {
+	if s.ctx == nil {
+		return model.Result{Ok: false, Error: "no context"}
+	}
+	w, h := runtime.WindowGetSize(s.ctx)
+	x, y := runtime.WindowGetPosition(s.ctx)
+	s.cfg.Window.Width = w
+	s.cfg.Window.Height = h
+	s.cfg.Window.X = x
+	s.cfg.Window.Y = y
+	if err := config.Save(s.configDir, s.cfg); err != nil {
+		return model.Result{Ok: false, Error: err.Error()}
+	}
+	return model.Result{Ok: true, Data: map[string]interface{}{
+		"width": w, "height": h, "x": x, "y": y,
+	}}
 }
 
 func (s *Service) startWatcher(path string) {

@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	FontSize int  `yaml:"fontSize"`
-	Diff     Diff `yaml:"diff"`
+	FontSize int         `yaml:"fontSize"`
+	Diff     Diff        `yaml:"diff"`
+	Window   WindowState `yaml:"window"`
 }
 
 type Diff struct {
@@ -18,6 +19,13 @@ type Diff struct {
 	DelBg     string `yaml:"delBg"`
 	DelText   string `yaml:"delText"`
 	DelStrike bool   `yaml:"delStrike"`
+}
+
+type WindowState struct {
+	Width  int `yaml:"width"`
+	Height int `yaml:"height"`
+	X      int `yaml:"x"`
+	Y      int `yaml:"y"`
 }
 
 func defaultConfig() Config {
@@ -29,6 +37,10 @@ func defaultConfig() Config {
 			DelBg:     "#ffd7d5",
 			DelText:   "#cf222e",
 			DelStrike: true,
+		},
+		Window: WindowState{
+			Width:  1280,
+			Height: 800,
 		},
 	}
 }

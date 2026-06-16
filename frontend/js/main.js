@@ -102,3 +102,13 @@ if (statusBar) {
 api.getFontSize().then((size) => {
   if (typeof size === "number") setState({ fontSize: size });
 });
+
+// Persist window size/position changes (backend already polls every 2s;
+// this is just a faster path for snappier saves on user resize/move).
+let winSaveTimer = null;
+window.addEventListener("resize", () => {
+  if (winSaveTimer) clearTimeout(winSaveTimer);
+  winSaveTimer = setTimeout(() => {
+    if (api.windowChanged) api.windowChanged();
+  }, 500);
+});

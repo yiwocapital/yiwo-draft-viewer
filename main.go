@@ -5,6 +5,7 @@ import (
 	"embed"
 
 	"github.com/yiwocapital/yiwo-draft-viewer/internal/app"
+	"github.com/yiwocapital/yiwo-draft-viewer/internal/config"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/menu"
 	"github.com/wailsapp/wails/v2/pkg/menu/keys"
@@ -56,6 +57,15 @@ func main() {
 		},
 		OnStartup: func(ctx context.Context) {
 			svc.Startup(ctx)
+			// Restore window size + position if saved values are non-zero.
+			// Skip position restoration if zero (first launch), let macOS center it.
+			cfg, _ := config.Load(".")
+			if cfg.Window.Width > 0 && cfg.Window.Height > 0 {
+				runtime.WindowSetSize(ctx, cfg.Window.Width, cfg.Window.Height)
+			}
+			if cfg.Window.X != 0 || cfg.Window.Y != 0 {
+				runtime.WindowSetPosition(ctx, cfg.Window.X, cfg.Window.Y)
+			}
 			runtime.OnFileDrop(ctx, func(x, y int, paths []string) {
 				if len(paths) > 0 {
 					runtime.EventsEmit(ctx, "file-dropped", paths[0])
