@@ -1,0 +1,12 @@
+build/bin
+node_modules
+frontend/dist
+
+# Wails-generated bindings (regenerated on every build)
+frontend/wailsjs/go
+
+# OMC state and project memory
+.omc/
+
+# macOS
+.DS_Store

@@ -1,0 +1,7 @@
+fontSize: 14
+diff:
+  addBg: "#d4f4dd"
+  addText: "#1a7f37"
+  delBg: "#ffd7d5"
+  delText: "#cf222e"
+  delStrike: true
