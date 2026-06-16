@@ -59,7 +59,7 @@ func main() {
 			svc.Startup(ctx)
 			// Restore window size + position if saved values are non-zero.
 			// Skip position restoration if zero (first launch), let macOS center it.
-			cfg, _ := config.Load(".")
+			cfg, _ := config.Load(svc.ConfigDir())
 			if cfg.Window.Width > 0 && cfg.Window.Height > 0 {
 				runtime.WindowSetSize(ctx, cfg.Window.Width, cfg.Window.Height)
 			}
@@ -71,6 +71,13 @@ func main() {
 					runtime.EventsEmit(ctx, "file-dropped", paths[0])
 				}
 			})
+		},
+		OnBeforeClose: func(ctx context.Context) (prevent bool) {
+			// Capture the final window state right before the app exits, so
+			// the very last position/size is persisted even if no resize or
+			// mouseup fired between the user's last action and the close.
+			svc.WindowChanged()
+			return false
 		},
 		DragAndDrop: &options.DragAndDrop{
 			EnableFileDrop:     true,

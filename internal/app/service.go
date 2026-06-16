@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -33,42 +34,43 @@ func NewService() *Service {
 	return &Service{}
 }
 
-func (s *Service) Startup(ctx context.Context) {
-	s.ctx = ctx
-	s.SetConfigDir(".")
-	if cfg, err := config.Load("."); err == nil {
-		s.cfg = cfg
-		s.currentFontSize = cfg.FontSize
+// defaultConfigDir returns the macOS-standard per-user config directory for
+// the app. Using a stable, OS-managed location (rather than the current
+// working directory) means the path is the same whether the app is launched
+// from Finder, the dock, or a terminal.
+func defaultConfigDir() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
 	}
-	go s.windowWatcher()
+	dir := filepath.Join(home, "Library", "Application Support", "YiwoDraftViewer")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", err
+	}
+	return dir, nil
 }
 
-func (s *Service) windowWatcher() {
-	ticker := time.NewTicker(2 * time.Second)
-	defer ticker.Stop()
-	var lastW, lastH, lastX, lastY int = -1, -1, -1, -1
-	for {
-		select {
-		case <-ticker.C:
-			if s.ctx == nil {
-				continue
-			}
-			w, h := runtime.WindowGetSize(s.ctx)
-			x, y := runtime.WindowGetPosition(s.ctx)
-			if w != lastW || h != lastH || x != lastX || y != lastY {
-				lastW, lastH, lastX, lastY = w, h, x, y
-				s.cfg.Window.Width = w
-				s.cfg.Window.Height = h
-				s.cfg.Window.X = x
-				s.cfg.Window.Y = y
-				_ = config.Save(s.configDir, s.cfg)
-			}
-		}
+func (s *Service) Startup(ctx context.Context) {
+	s.ctx = ctx
+	if dir, err := defaultConfigDir(); err == nil {
+		s.SetConfigDir(dir)
+	} else {
+		s.SetConfigDir(".")
+	}
+	if cfg, err := config.Load(s.configDir); err == nil {
+		s.cfg = cfg
+		s.currentFontSize = cfg.FontSize
 	}
 }
 
 func (s *Service) Ctx() context.Context {
 	return s.ctx
+}
+
+// ConfigDir returns the directory where setting.local.yaml is read from and
+// written to. Used by main.go's OnStartup to load saved window state.
+func (s *Service) ConfigDir() string {
+	return s.configDir
 }
 
 func (s *Service) SetConfigDir(dir string) {

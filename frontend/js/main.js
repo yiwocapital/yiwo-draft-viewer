@@ -103,12 +103,17 @@ api.getFontSize().then((size) => {
   if (typeof size === "number") setState({ fontSize: size });
 });
 
-// Persist window size/position changes (backend already polls every 2s;
-// this is just a faster path for snappier saves on user resize/move).
+// Persist window state on user-driven changes (resize + window-drag mouseup).
+// Debounced so a continuous drag/resize coalesces into one save.
 let winSaveTimer = null;
-window.addEventListener("resize", () => {
+function scheduleWindowSave() {
   if (winSaveTimer) clearTimeout(winSaveTimer);
   winSaveTimer = setTimeout(() => {
     if (api.windowChanged) api.windowChanged();
-  }, 500);
-});
+    winSaveTimer = null;
+  }, 400);
+}
+window.addEventListener("resize", scheduleWindowSave);
+// Window-drag end: webview doesn't fire resize when the native window is moved
+// without resizing. mouseup captures the moment the drag ends.
+window.addEventListener("mouseup", scheduleWindowSave);
