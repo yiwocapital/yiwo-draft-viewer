@@ -2,34 +2,33 @@ import { getState, subscribe } from "../store.js";
 import { escapeHtml } from "../util/html.js";
 
 function renderWithLineNumbers(segments) {
+  // Group segments by line (split at \n). Each line becomes a row; each row
+  // contains 0+ segments, each preserving its original op for inline coloring.
   const lines = [];
-  let currentLine = "";
-  let currentOp = 0;
-
+  let currentLine = [];
   for (const seg of segments) {
     const parts = seg.text.split("\n");
     for (let i = 0; i < parts.length; i++) {
       if (i > 0) {
-        lines.push({ text: currentLine, op: currentOp });
-        currentLine = parts[i];
-        currentOp = seg.op;
-      } else {
-        if (currentOp === 0) currentOp = seg.op;
-        currentLine += parts[i];
+        lines.push(currentLine);
+        currentLine = [];
+      }
+      if (parts[i].length > 0) {
+        currentLine.push({ op: seg.op, text: parts[i] });
       }
     }
   }
-  if (currentLine.length > 0 || lines.length === 0) {
-    lines.push({ text: currentLine, op: currentOp });
-  }
+  if (currentLine.length > 0) lines.push(currentLine);
 
-  return lines.map((line, i) => {
+  return lines.map((lineSegs, i) => {
     const num = String(i + 1).padStart(3, " ");
-    const safe = escapeHtml(line.text);
-    let cls = "";
-    if (line.op === 1) cls = "diff-ins";
-    else if (line.op === 2) cls = "diff-del";
-    return `<div class="diff-line${cls ? " " + cls : ""}"><span class="line-num">${num}</span><span class="line-text">${safe}</span></div>`;
+    const inner = lineSegs.map((s) => {
+      const safe = escapeHtml(s.text);
+      if (s.op === 1) return `<span class="diff-ins">${safe}</span>`;
+      if (s.op === 2) return `<span class="diff-del">${safe}</span>`;
+      return safe;
+    }).join("");
+    return `<div class="diff-line"><span class="line-num">${num}</span><span class="line-text">${inner}</span></div>`;
   }).join("");
 }
 
@@ -59,18 +58,19 @@ function scrollToFirstDiff(view) {
 
 export function init() {
   const view = document.getElementById("main-view");
-  const statusBar = document.getElementById("status-bar");
 
   function refresh() {
     const s = getState();
-    // Status bar (sticky, persistent element)
+    const statusBar = document.getElementById("status-bar");
+    // Status bar (lives outside #main-view in the DOM, so survives innerHTML rewrite)
     if (s.loaded && s.path) {
-      statusBar.textContent = s.path;
+      if (statusBar.textContent !== s.path) statusBar.textContent = s.path;
       statusBar.classList.remove("hidden");
     } else {
       statusBar.textContent = "";
       statusBar.classList.add("hidden");
     }
+
     // Main content
     if (!s.loaded) {
       view.innerHTML = `<div class="empty-hint">拖一个 .md 文件进来，或菜单 File → Open</div>`;

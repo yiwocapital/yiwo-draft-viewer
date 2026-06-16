@@ -11,9 +11,17 @@
   word-break: break-word;
   padding: 1px 0;
 }
-.diff-line.diff-ins { background: var(--add-bg); color: var(--add-text); }
-.diff-line.diff-del { background: var(--del-bg); color: var(--del-text); }
-.diff-line.diff-del .line-text { text-decoration: line-through; }
+.diff-line .diff-ins {
+  background: var(--add-bg);
+  color: var(--add-text);
+  border-radius: 2px;
+}
+.diff-line .diff-del {
+  background: var(--del-bg);
+  color: var(--del-text);
+  text-decoration: line-through;
+  border-radius: 2px;
+}
 .line-num {
   flex: 0 0 3.5em;
   padding-right: 1em;

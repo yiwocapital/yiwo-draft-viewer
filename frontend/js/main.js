@@ -54,12 +54,22 @@ if (window.runtime && window.runtime.EventsOn) {
   window.runtime.EventsOn("file-dropped", (path) => {
     openFile(path);
   });
-  window.runtime.EventsOn("reload", () => {
-    // Trigger a manual refresh by re-opening current path
-    if (window.__currentPath) {
-      openFile(window.__currentPath);
-    }
-  });
+  // Reload logic shared by fsnotify "reloaded" event and menu Cmd+R "reload" event
+  function reloadFromBackend() {
+    if (!window.__currentPath) return;
+    api.listCommits().then((cRes) => {
+      if (!cRes.ok) return;
+      const cur = getState().selected;
+      const stillThere = cRes.data.items.find((c) => c.hash === cur);
+      const nextSel = stillThere ? cur : (cRes.data.items[0]?.hash || null);
+      setState({
+        commits: cRes.data.items,
+        selected: nextSel,
+      });
+    });
+  }
+  window.runtime.EventsOn("reloaded", reloadFromBackend);
+  window.runtime.EventsOn("reload", reloadFromBackend);
   window.runtime.EventsOn("close-file", () => {
     // Reset to empty state
     document.getElementById("app").classList.add("empty");
@@ -73,6 +83,20 @@ if (window.runtime && window.runtime.EventsOn) {
 }
 
 window.__openFile = openFile;
+
+// Status bar: click-to-copy path
+const statusBar = document.getElementById("status-bar");
+if (statusBar) {
+  statusBar.addEventListener("click", async () => {
+    const path = getState().path;
+    if (path) {
+      const { copyText } = await import("./util/clipboard.js");
+      const ok = await copyText(path);
+      if (ok) showToast("已复制路径");
+    }
+  });
+  statusBar.title = "点击复制路径";
+}
 
 // Initialize font size from config
 api.getFontSize().then((size) => {
