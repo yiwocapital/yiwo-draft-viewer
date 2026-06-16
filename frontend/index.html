@@ -1,12 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>yiwo-draft-viewer</title>
+  <meta charset="UTF-8">
+  <title>YiwoDraftViewer</title>
+  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/diff.css">
+  <link rel="stylesheet" href="/css/list.css">
+  <link rel="stylesheet" href="/css/wordcount.css">
+  <link rel="stylesheet" href="/css/toolbar.css">
+  <link rel="stylesheet" href="/css/toast.css">
 </head>
 <body>
-<div id="app"></div>
-<script src="./src/main.js" type="module"></script>
+  <div id="app" class="empty">
+    <main id="main-view" class="main-view">
+      <div class="empty-hint">拖一个 .md 文件进来，或菜单 File → Open</div>
+    </main>
+    <aside id="sidebar" class="sidebar">
+      <div id="wordcount" class="wordcount hidden">
+        <span class="wordcount-label">字数</span>
+        <span id="wordcount-value" class="wordcount-value">0</span>
+      </div>
+      <div id="commit-list" class="commit-list"></div>
+      <div id="toolbar" class="toolbar">
+        <button data-section="title" disabled>复制标题</button>
+        <button data-section="summary" disabled>复制摘要</button>
+        <button data-section="body">复制正文</button>
+        <button data-section="all">复制全部</button>
+      </div>
+    </aside>
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+  <script type="module" src="/js/main.js"></script>
 </body>
 </html>

@@ -1,0 +1,10 @@
+.diff-ins { background: var(--add-bg); color: var(--add-text); }
+.diff-del { background: var(--del-bg); color: var(--del-text); text-decoration: line-through; }
+.version-header {
+  padding: 12px 16px;
+  background: var(--hover);
+  border-bottom: 1px solid var(--border);
+  margin: -32px -48px 24px;
+}
+.version-header .subject { font-weight: 600; }
+.version-header .body { color: var(--muted); margin-top: 4px; white-space: pre-wrap; }

@@ -1,0 +1,18 @@
+.toolbar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 8px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.toolbar button {
+  padding: 8px 4px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  cursor: pointer;
+}
+.toolbar button:hover:not(:disabled) { background: var(--hover); }
+.toolbar button:disabled { color: var(--muted); cursor: not-allowed; }

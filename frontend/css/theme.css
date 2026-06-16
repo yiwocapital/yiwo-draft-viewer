@@ -1,0 +1,16 @@
+:root {
+  --bg: #ffffff;
+  --fg: #1f2328;
+  --muted: #656d76;
+  --border: #d0d7de;
+  --hover: #f6f8fa;
+  --add-bg: #d4f4dd;
+  --add-text: #1a7f37;
+  --del-bg: #ffd7d5;
+  --del-text: #cf222e;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; font-size: 14px; color: var(--fg); background: var(--bg); }
+.hidden { display: none !important; }

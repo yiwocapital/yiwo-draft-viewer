@@ -1,0 +1,45 @@
+.commit-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+.commit-item {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  position: relative;
+}
+.commit-item:hover { background: var(--bg); }
+.commit-item.selected { background: #ddf4ff; }
+.commit-item.unstaged { background: #fff8c5; }
+.commit-item.unstaged.selected { background: #ffe79c; }
+.commit-hash {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  color: var(--muted);
+  display: inline-block;
+}
+.copy-hash {
+  display: none;
+  margin-left: 6px;
+  cursor: pointer;
+}
+.commit-item:hover .copy-hash { display: inline; }
+.commit-msg {
+  margin-top: 4px;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.commit-time {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.commit-list-empty {
+  padding: 24px 16px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
