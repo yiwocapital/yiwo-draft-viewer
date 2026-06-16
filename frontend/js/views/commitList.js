@@ -87,6 +87,7 @@ async function loadDiff() {
 
 export function init() {
   const list = document.getElementById("commit-list");
+  const readMode = document.getElementById("read-mode");
 
   function refresh() {
     const s = getState();
@@ -97,7 +98,16 @@ export function init() {
       empty.textContent = "未启用版本控制";
       list.appendChild(empty);
       renderDetail(s);
+      if (readMode) readMode.classList.remove("active");
       return;
+    }
+    // Read-mode active state
+    if (readMode) {
+      if (s.selected === null) {
+        readMode.classList.add("active");
+      } else {
+        readMode.classList.remove("active");
+      }
     }
     s.commits.forEach((c) => {
       const isSel = s.selected === c.hash;
@@ -140,6 +150,13 @@ export function init() {
     if (s.selected === c.hash) return;
     setState({ selected: c.hash, multiSelect: [] });
   });
+
+  if (readMode) {
+    readMode.addEventListener("click", () => {
+      setState({ selected: null, multiSelect: [] });
+      lastLoadKey = null;
+    });
+  }
 
   subscribe(refresh);
   subscribe(loadDiff);

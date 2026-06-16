@@ -46,6 +46,31 @@
   font-size: 12px;
   text-align: center;
 }
+.read-mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 13px;
+  user-select: none;
+}
+.read-mode:hover {
+  background: var(--hover);
+}
+.read-mode.active {
+  background: #ddf4ff;
+  color: #0969da;
+  font-weight: 600;
+}
+.read-mode .read-icon {
+  font-size: 14px;
+}
+.read-mode.active .read-icon {
+  filter: hue-rotate(180deg);
+}
 .commit-detail {
   padding: 10px 16px;
   background: var(--bg);

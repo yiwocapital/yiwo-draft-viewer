@@ -76,6 +76,11 @@ export function init() {
       view.innerHTML = `<div class="empty-hint">拖一个 .md 文件进来，或菜单 File → Open</div>`;
       return;
     }
+    if (s.selected === null) {
+      // Read mode — no diff, no header, plain text
+      view.innerHTML = `<div class="diff">${renderStaticWithLineNumbers(s.content)}</div>`;
+      return;
+    }
     if (s.diff.static || !s.diff.segments) {
       view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderStaticWithLineNumbers(s.content)}</div>`;
       return;
