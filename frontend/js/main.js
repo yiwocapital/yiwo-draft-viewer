@@ -27,6 +27,7 @@ async function openFile(path) {
   window.__currentPath = path;
   setState({
     loaded: true,
+    path: res.data.path,
     hasGit: res.data.hasGit,
     hasFrontmatter: res.data.hasFrontmatter,
     title: res.data.title,
@@ -63,7 +64,7 @@ if (window.runtime && window.runtime.EventsOn) {
     // Reset to empty state
     document.getElementById("app").classList.add("empty");
     setState({
-      loaded: false, hasGit: false, hasFrontmatter: false,
+      loaded: false, path: "", hasGit: false, hasFrontmatter: false,
       title: "", summary: "", content: "", charCount: 0,
       commits: [], selected: null, multiSelect: [],
       diff: { segments: [], charCount: 0, static: false },

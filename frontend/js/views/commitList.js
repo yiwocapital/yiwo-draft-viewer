@@ -123,10 +123,18 @@ export function init() {
     if (e.metaKey || e.ctrlKey) {
       const multi = [...s.multiSelect];
       const idx = multi.indexOf(c.hash);
-      if (idx >= 0) multi.splice(idx, 1);
-      else if (multi.length < 2) multi.push(c.hash);
-      else multi[1] = c.hash;
-      setState({ multiSelect: multi });
+      if (idx >= 0) {
+        // Clicked an already-multi-selected commit — remove it
+        multi.splice(idx, 1);
+      } else {
+        // Add new commit; cap at 2 with FIFO (drop oldest)
+        multi.push(c.hash);
+        if (multi.length > 2) {
+          multi.shift();
+        }
+      }
+      // Update BOTH selected (for the highlight) and multiSelect
+      setState({ selected: c.hash, multiSelect: multi });
       return;
     }
     if (s.selected === c.hash) return;

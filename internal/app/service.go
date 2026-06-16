@@ -198,14 +198,8 @@ func (s *Service) CloseFile() model.Result {
 }
 
 func (s *Service) updateWindowTitle() {
-	if s.ctx == nil {
-		return
-	}
-	if s.currentPath == "" {
-		runtime.WindowSetTitle(s.ctx, "YiwoDraftViewer")
-	} else {
-		runtime.WindowSetTitle(s.ctx, s.currentPath)
-	}
+	// No-op: macOS shows the app name in menu bar; the window title is also
+	// fixed to "YiwoDraftViewer". File path is shown in the in-app status bar.
 }
 
 func (s *Service) SetFontSize(size int) model.Result {

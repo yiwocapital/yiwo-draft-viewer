@@ -1,14 +1,12 @@
 import { getState, subscribe } from "../store.js";
 
+function applyFontSize(size) {
+  document.documentElement.style.setProperty("--reading-font-size", `${size}px`);
+}
+
 export function init() {
-  const view = document.getElementById("main-view");
-
-  function apply(s) {
-    view.style.setProperty("--reading-font-size", `${s.fontSize}px`);
-    // Force mainView re-render so the visual change is immediate
-    if (window.__mainViewRefresh) window.__mainViewRefresh();
-  }
-
-  subscribe(apply);
-  apply(getState());
+  // Apply initial value from store
+  applyFontSize(getState().fontSize);
+  // Keep in sync with future changes
+  subscribe((s) => applyFontSize(s.fontSize));
 }

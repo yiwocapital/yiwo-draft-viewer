@@ -3,6 +3,13 @@ import { api } from "../api.js";
 import { copyText } from "./clipboard.js";
 import { showToast } from "../views/toast.js";
 
+function applyFontSize(size) {
+  // Set on documentElement so ALL descendants inherit
+  document.documentElement.style.setProperty("--reading-font-size", `${size}px`);
+  // Force mainView to re-render so line-numbered rows rebuild at new size
+  if (window.__mainViewRefresh) window.__mainViewRefresh();
+}
+
 export function initShortcuts() {
   document.addEventListener("keydown", async (e) => {
     const s = getState();
@@ -29,16 +36,16 @@ export function initShortcuts() {
       e.preventDefault();
       const cur = getState().fontSize;
       const next = Math.min(32, cur + 1);
-      api.setFontSize(next).then((res) => {
-        if (res.ok) setState({ fontSize: res.data.fontSize });
-      });
+      applyFontSize(next);                    // immediate DOM update
+      api.setFontSize(next);                  // fire-and-forget persistence
+      setState({ fontSize: next });
     } else if ((e.metaKey || e.ctrlKey) && e.key === "-") {
       e.preventDefault();
       const cur = getState().fontSize;
       const next = Math.max(10, cur - 1);
-      api.setFontSize(next).then((res) => {
-        if (res.ok) setState({ fontSize: res.data.fontSize });
-      });
+      applyFontSize(next);
+      api.setFontSize(next);
+      setState({ fontSize: next });
     }
   });
 }

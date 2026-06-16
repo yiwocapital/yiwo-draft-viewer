@@ -59,19 +59,25 @@ function scrollToFirstDiff(view) {
 
 export function init() {
   const view = document.getElementById("main-view");
+  const statusBar = document.getElementById("status-bar");
 
   function refresh() {
     const s = getState();
+    // Status bar (sticky, persistent element)
+    if (s.loaded && s.path) {
+      statusBar.textContent = s.path;
+      statusBar.classList.remove("hidden");
+    } else {
+      statusBar.textContent = "";
+      statusBar.classList.add("hidden");
+    }
+    // Main content
     if (!s.loaded) {
       view.innerHTML = `<div class="empty-hint">拖一个 .md 文件进来，或菜单 File → Open</div>`;
       return;
     }
-    if (s.diff.static) {
+    if (s.diff.static || !s.diff.segments) {
       view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderStaticWithLineNumbers(s.content)}</div>`;
-      return;
-    }
-    if (!s.diff.segments) {
-      view.innerHTML = `<div class="diff">${renderStaticWithLineNumbers(s.content)}</div>`;
       return;
     }
     view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderWithLineNumbers(s.diff.segments)}</div>`;

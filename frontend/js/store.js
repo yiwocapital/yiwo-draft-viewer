@@ -1,5 +1,6 @@
 const state = {
   loaded: false,
+  path: "",
   hasGit: false,
   hasFrontmatter: false,
   title: "",
