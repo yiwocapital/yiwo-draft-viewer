@@ -26,7 +26,7 @@ export function init() {
       await copyText(res.data.text);
       showToast("已复制");
     } else {
-      showToast(`复制失败：${res.error}`);
+      showToast(`复制失败：${res.error}`, { kind: "error" });
     }
   });
 

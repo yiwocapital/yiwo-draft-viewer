@@ -21,7 +21,7 @@ initShortcuts();
 async function openFile(path) {
   const res = await api.openFile(path);
   if (!res.ok) {
-    showToast(res.error);
+    showToast(res.error, { kind: "error" });
     return;
   }
   window.__currentPath = path;
