@@ -109,3 +109,10 @@ func (r *Repo) WorkingTree(filePath string) string {
 	}
 	return string(data)
 }
+
+func (r *Repo) WorkTreePath() string {
+	if r == nil {
+		return ""
+	}
+	return r.workTree
+}
