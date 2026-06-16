@@ -71,6 +71,22 @@
 .read-mode.active .read-icon {
   filter: hue-rotate(180deg);
 }
+.read-shortcut {
+  margin-left: auto;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--hover);
+  color: var(--muted);
+  font-weight: 500;
+}
+.read-mode.active .read-shortcut {
+  border-color: #0969da;
+  background: #fff;
+  color: #0969da;
+}
 .commit-detail {
   padding: 10px 16px;
   background: var(--bg);

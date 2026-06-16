@@ -44,6 +44,7 @@ func main() {
 		runtime.EventsEmit(svc.Ctx(), "reload")
 	})
 
+	AppMenu.Append(menu.AppMenu())
 	AppMenu.Append(menu.EditMenu())
 	AppMenu.Append(menu.WindowMenu())
 
