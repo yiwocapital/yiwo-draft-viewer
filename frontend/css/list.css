@@ -13,6 +13,9 @@
 .commit-item.selected { background: #ddf4ff; }
 .commit-item.unstaged { background: #fff8c5; }
 .commit-item.unstaged.selected { background: #ffe79c; }
+.commit-item.multi-selected { background: #cce5ff; }
+.commit-item.multi-selected.selected { background: #99c2ff; }
+.commit-item.unstaged.multi-selected { background: #ffe79c; }
 .commit-hash {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 12px;

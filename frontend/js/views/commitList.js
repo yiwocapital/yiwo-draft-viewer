@@ -12,11 +12,12 @@ function timeAgo(ts) {
   return `${Math.floor(diff / 86400)}天前`;
 }
 
-function renderItem(c, selected) {
+function renderItem(c, selected, multiSelected) {
   const div = document.createElement("div");
   div.className = "commit-item";
   if (c.isUnstaged) div.classList.add("unstaged");
   if (selected) div.classList.add("selected");
+  if (multiSelected) div.classList.add("multi-selected");
   div.dataset.hash = c.hash;
 
   const firstLine = c.firstLine + (c.hasMore ? " ..." : "");
@@ -100,7 +101,8 @@ export function init() {
     }
     s.commits.forEach((c) => {
       const isSel = s.selected === c.hash;
-      list.appendChild(renderItem(c, isSel));
+      const isMulti = s.multiSelect.includes(c.hash);
+      list.appendChild(renderItem(c, isSel, isMulti));
     });
     renderDetail(s);
   }

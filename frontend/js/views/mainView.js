@@ -2,7 +2,6 @@ import { getState, subscribe } from "../store.js";
 import { escapeHtml } from "../util/html.js";
 
 function renderWithLineNumbers(segments) {
-  // Walk segments, splitting at \n boundaries. Each "line" gets the op of its starting segment.
   const lines = [];
   let currentLine = "";
   let currentOp = 0;
@@ -11,7 +10,6 @@ function renderWithLineNumbers(segments) {
     const parts = seg.text.split("\n");
     for (let i = 0; i < parts.length; i++) {
       if (i > 0) {
-        // \n boundary — flush current line
         lines.push({ text: currentLine, op: currentOp });
         currentLine = parts[i];
         currentOp = seg.op;
@@ -43,19 +41,13 @@ function renderStaticWithLineNumbers(content) {
   }).join("");
 }
 
-function currentHeader(s) {
-  if (s.selected === "WORKING") {
-    return `<div class="version-header"><div class="subject">未提交</div><div class="body">工作区相对最新 commit 的差异</div></div>`;
-  }
-  const c = s.commits.find((x) => x.hash === s.selected);
-  if (!c) return "";
-  const lines = c.message.split("\n");
-  const subject = lines[0] || "";
-  const body = lines.slice(1).join("\n").trim();
-  return `<div class="version-header">
-    <div class="subject">${escapeHtml(subject)}</div>
-    ${body ? `<div class="body">${escapeHtml(body)}</div>` : ""}
-  </div>`;
+function multiSelectBanner(s) {
+  if (s.multiSelect.length !== 2) return "";
+  const [a, b] = s.multiSelect;
+  const ca = s.commits.find((c) => c.hash === a);
+  const cb = s.commits.find((c) => c.hash === b);
+  if (!ca || !cb) return "";
+  return `<div class="multi-banner">对比：${escapeHtml(ca.shortHash)} ↔ ${escapeHtml(cb.shortHash)}</div>`;
 }
 
 function scrollToFirstDiff(view) {
@@ -75,13 +67,17 @@ export function init() {
       return;
     }
     if (s.diff.static) {
+      view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderStaticWithLineNumbers(s.content)}</div>`;
+      return;
+    }
+    if (!s.diff.segments) {
       view.innerHTML = `<div class="diff">${renderStaticWithLineNumbers(s.content)}</div>`;
       return;
     }
-    const header = currentHeader(s);
-    view.innerHTML = `${header}<div class="diff">${renderWithLineNumbers(s.diff.segments)}</div>`;
+    view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderWithLineNumbers(s.diff.segments)}</div>`;
     scrollToFirstDiff(view);
   }
 
   subscribe(refresh);
+  window.__mainViewRefresh = refresh;
 }

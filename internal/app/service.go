@@ -68,6 +68,7 @@ func (s *Service) OpenFile(path string) model.Result {
 	s.hasFm = fm.HasFrontmatter
 	s.repo = repo
 	s.startWatcher(path)
+	s.updateWindowTitle()
 	return model.Result{Ok: true, Data: map[string]interface{}{
 		"path": path, "content": content,
 		"title": fm.Title, "summary": fm.Summary,
@@ -84,12 +85,27 @@ func (s *Service) ListCommits() model.Result {
 	}
 	rel, _ := filepath.Rel(s.repo.WorkTreePath(), s.currentPath)
 	commits := s.repo.Commits(rel)
-	items := []map[string]interface{}{{
-		"hash": "WORKING", "shortHash": "未提交",
-		"message": "未提交的修改", "firstLine": "未提交",
-		"hasMore": false, "timestamp": time.Now().Unix(),
-		"isUnstaged": true,
-	}}
+
+	items := []map[string]interface{}{}
+
+	// Determine whether the working tree actually differs from HEAD.
+	hasUnstaged := false
+	if len(commits) > 0 {
+		headContent := s.repo.Blob(commits[0].Hash, rel)
+		hasUnstaged = (s.content != headContent)
+	} else {
+		// No commits yet: if file has any content, it's all "unstaged"
+		hasUnstaged = (s.content != "")
+	}
+
+	if hasUnstaged {
+		items = append(items, map[string]interface{}{
+			"hash": "WORKING", "shortHash": "未提交",
+			"message": "未提交的修改", "firstLine": "未提交",
+			"hasMore": false, "timestamp": time.Now().Unix(),
+			"isUnstaged": true,
+		})
+	}
 	for _, c := range commits {
 		items = append(items, map[string]interface{}{
 			"hash":      c.Hash,
@@ -161,7 +177,35 @@ func (s *Service) Reload() model.Result {
 	if s.currentPath == "" {
 		return model.Result{Ok: false, Error: "no file open"}
 	}
-	return s.OpenFile(s.currentPath)
+	res := s.OpenFile(s.currentPath)
+	return res
+}
+
+func (s *Service) CloseFile() model.Result {
+	if s.watcher != nil {
+		s.watcher.Close()
+		s.watcher = nil
+	}
+	s.currentPath = ""
+	s.content = ""
+	s.title = ""
+	s.summary = ""
+	s.body = ""
+	s.hasFm = false
+	s.repo = nil
+	s.updateWindowTitle()
+	return model.Result{Ok: true}
+}
+
+func (s *Service) updateWindowTitle() {
+	if s.ctx == nil {
+		return
+	}
+	if s.currentPath == "" {
+		runtime.WindowSetTitle(s.ctx, "YiwoDraftViewer")
+	} else {
+		runtime.WindowSetTitle(s.ctx, s.currentPath)
+	}
 }
 
 func (s *Service) SetFontSize(size int) model.Result {

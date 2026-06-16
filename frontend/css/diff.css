@@ -25,11 +25,13 @@
 .line-text {
   flex: 1;
 }
-.version-header {
-  padding: 12px 16px;
-  background: var(--hover);
-  border-bottom: 1px solid var(--border);
-  margin: -32px -48px 24px;
+.multi-banner {
+  padding: 8px 12px;
+  background: #ddf4ff;
+  border: 1px solid #b6e3ff;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #0969da;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
 }
-.version-header .subject { font-weight: 600; }
-.version-header .body { color: var(--muted); margin-top: 4px; white-space: pre-wrap; }

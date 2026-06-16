@@ -34,6 +34,7 @@ func main() {
 		}
 	})
 	fileMenu.AddText("Close", keys.CmdOrCtrl("w"), func(cd *menu.CallbackData) {
+		svc.CloseFile()
 		runtime.EventsEmit(svc.Ctx(), "close-file")
 	})
 
