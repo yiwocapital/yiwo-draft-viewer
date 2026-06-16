@@ -1,15 +1,46 @@
 import { getState, subscribe } from "../store.js";
 import { escapeHtml } from "../util/html.js";
 
-function renderSegments(segments) {
-  return segments
-    .map((s) => {
-      const safe = escapeHtml(s.text);
-      if (s.op === 1) return `<span class="diff-ins">${safe}</span>`;
-      if (s.op === 2) return `<span class="diff-del">${safe}</span>`;
-      return safe;
-    })
-    .join("");
+function renderWithLineNumbers(segments) {
+  // Walk segments, splitting at \n boundaries. Each "line" gets the op of its starting segment.
+  const lines = [];
+  let currentLine = "";
+  let currentOp = 0;
+
+  for (const seg of segments) {
+    const parts = seg.text.split("\n");
+    for (let i = 0; i < parts.length; i++) {
+      if (i > 0) {
+        // \n boundary — flush current line
+        lines.push({ text: currentLine, op: currentOp });
+        currentLine = parts[i];
+        currentOp = seg.op;
+      } else {
+        if (currentOp === 0) currentOp = seg.op;
+        currentLine += parts[i];
+      }
+    }
+  }
+  if (currentLine.length > 0 || lines.length === 0) {
+    lines.push({ text: currentLine, op: currentOp });
+  }
+
+  return lines.map((line, i) => {
+    const num = String(i + 1).padStart(3, " ");
+    const safe = escapeHtml(line.text);
+    let cls = "";
+    if (line.op === 1) cls = "diff-ins";
+    else if (line.op === 2) cls = "diff-del";
+    return `<div class="diff-line${cls ? " " + cls : ""}"><span class="line-num">${num}</span><span class="line-text">${safe}</span></div>`;
+  }).join("");
+}
+
+function renderStaticWithLineNumbers(content) {
+  const lines = content.split("\n");
+  return lines.map((line, i) => {
+    const num = String(i + 1).padStart(3, " ");
+    return `<div class="diff-line"><span class="line-num">${num}</span><span class="line-text">${escapeHtml(line)}</span></div>`;
+  }).join("");
 }
 
 function currentHeader(s) {
@@ -44,15 +75,15 @@ export function init() {
       return;
     }
     if (s.diff.static) {
-      view.innerHTML = `<pre class="static">${escapeHtml(s.content)}</pre>`;
+      view.innerHTML = `<div class="diff">${renderStaticWithLineNumbers(s.content)}</div>`;
       return;
     }
     if (!s.diff.segments || s.diff.segments.length === 0) {
-      view.innerHTML = `<pre class="static">${escapeHtml(s.content)}</pre>`;
+      view.innerHTML = `<div class="diff">${renderStaticWithLineNumbers(s.content)}</div>`;
       return;
     }
     const header = currentHeader(s);
-    view.innerHTML = `${header}<pre class="diff">${renderSegments(s.diff.segments)}</pre>`;
+    view.innerHTML = `${header}<div class="diff">${renderWithLineNumbers(s.diff.segments)}</div>`;
     scrollToFirstDiff(view);
   }
 

@@ -29,6 +29,50 @@ function renderItem(c, selected) {
   return div;
 }
 
+function renderDetail(s) {
+  const detail = document.getElementById("commit-detail");
+  if (!detail) return;
+  if (!s.hasGit || !s.selected || s.commits.length === 0) {
+    detail.innerHTML = "";
+    detail.classList.add("hidden");
+    return;
+  }
+  const c = s.commits.find((x) => x.hash === s.selected);
+  if (!c) {
+    detail.innerHTML = "";
+    detail.classList.add("hidden");
+    return;
+  }
+  detail.classList.remove("hidden");
+  const subject = c.message.split("\n")[0] || "";
+  const body = c.message.split("\n").slice(1).join("\n").trim();
+  detail.innerHTML = `
+    <div class="detail-subject">${escapeHtml(subject)}</div>
+    ${body ? `<div class="detail-body">${escapeHtml(body)}</div>` : ""}
+    <div class="detail-meta">
+      <span class="detail-hash">${escapeHtml(c.hash)}</span>
+      <span class="detail-time">${new Date(c.timestamp * 1000).toLocaleString("zh-CN")}</span>
+    </div>
+  `;
+}
+
+async function loadDiff() {
+  const s = getState();
+  if (!s.selected) return;
+  if (s.multiSelect.length === 2) {
+    const [a, b] = s.multiSelect;
+    const res = await api.getDiff(a, b);
+    if (res.ok) setState({ diff: res.data, charCount: res.data.charCount });
+    return;
+  }
+  const idx = s.commits.findIndex((c) => c.hash === s.selected);
+  if (idx < 0) return;
+  const cur = s.commits[idx].hash;
+  const prev = idx + 1 < s.commits.length ? s.commits[idx + 1].hash : "";
+  const res = await api.getDiff(prev, cur);
+  if (res.ok) setState({ diff: res.data, charCount: res.data.charCount });
+}
+
 export function init() {
   const list = document.getElementById("commit-list");
 
@@ -40,50 +84,44 @@ export function init() {
       empty.className = "commit-list-empty";
       empty.textContent = "未启用版本控制";
       list.appendChild(empty);
+      renderDetail(s);
       return;
     }
     s.commits.forEach((c) => {
       const isSel = s.selected === c.hash;
-      const item = renderItem(c, isSel);
-      item.addEventListener("click", (e) => {
-        if (e.target.classList.contains("copy-hash")) {
-          copyText(c.hash).then(() => showToast("已复制"));
-          return;
-        }
-        if (e.metaKey || e.ctrlKey) {
-          const multi = [...s.multiSelect];
-          const idx = multi.indexOf(c.hash);
-          if (idx >= 0) multi.splice(idx, 1);
-          else if (multi.length < 2) multi.push(c.hash);
-          else multi[0] = c.hash;
-          setState({ multiSelect: multi });
-        } else {
-          setState({ selected: c.hash, multiSelect: [] });
-          loadDiff();
-        }
-      });
-      list.appendChild(item);
+      list.appendChild(renderItem(c, isSel));
     });
+    renderDetail(s);
   }
 
-  async function loadDiff() {
+  // Event delegation: one listener on the parent survives list rebuilds.
+  list.addEventListener("click", async (e) => {
+    const item = e.target.closest(".commit-item");
+    if (!item) return;
+    const hash = item.dataset.hash;
     const s = getState();
-    if (!s.selected) return;
-    if (s.multiSelect.length === 2) {
-      const [a, b] = s.multiSelect;
-      const res = await api.getDiff(a, b);
-      if (res.ok) setState({ diff: res.data, charCount: res.data.charCount });
-    } else {
-      const idx = s.commits.findIndex((c) => c.hash === s.selected);
-      if (idx < 0) return;
-      const cur = s.commits[idx].hash;
-      const prev = idx + 1 < s.commits.length ? s.commits[idx + 1].hash : "";
-      const res = await api.getDiff(prev, cur);
-      if (res.ok) setState({ diff: res.data, charCount: res.data.charCount });
+    const c = s.commits.find((x) => x.hash === hash);
+    if (!c) return;
+
+    if (e.target.classList.contains("copy-hash")) {
+      await copyText(c.hash);
+      showToast("已复制");
+      return;
     }
-  }
+    if (e.metaKey || e.ctrlKey) {
+      const multi = [...s.multiSelect];
+      const idx = multi.indexOf(c.hash);
+      if (idx >= 0) multi.splice(idx, 1);
+      else if (multi.length < 2) multi.push(c.hash);
+      else multi[1] = c.hash;
+      setState({ multiSelect: multi });
+      return;
+    }
+    if (s.selected === c.hash) return; // already selected, no-op
+    setState({ selected: c.hash, multiSelect: [] });
+  });
 
   subscribe(refresh);
   subscribe(loadDiff);
-  window.__loadDiff = loadDiff; // for keyboard nav
+  window.__loadDiff = loadDiff;
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 
 	"github.com/yiwocapital/yiwo-draft-viewer/internal/app"
@@ -52,7 +53,20 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		OnStartup: svc.Startup,
+		OnStartup: func(ctx context.Context) {
+			svc.Startup(ctx)
+			runtime.OnFileDrop(ctx, func(x, y int, paths []string) {
+				if len(paths) > 0 {
+					runtime.EventsEmit(ctx, "file-dropped", paths[0])
+				}
+			})
+		},
+		DragAndDrop: &options.DragAndDrop{
+			EnableFileDrop:     true,
+			DisableWebViewDrop: true,
+			CSSDropProperty:    "--wails-drop-target",
+			CSSDropValue:       "drop",
+		},
 		Bind: []interface{}{
 			svc,
 		},

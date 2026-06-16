@@ -43,3 +43,27 @@
   font-size: 12px;
   text-align: center;
 }
+.commit-detail {
+  padding: 10px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.commit-detail.hidden { display: none !important; }
+.detail-subject { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.detail-body {
+  color: var(--muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 6px;
+}
+.detail-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.detail-hash { user-select: all; }

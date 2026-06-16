@@ -13,19 +13,8 @@ initWc();
 initTb();
 initShortcuts();
 
-// Drag & drop
-const app = document.getElementById("app");
-app.addEventListener("dragover", (e) => { e.preventDefault(); });
-app.addEventListener("drop", async (e) => {
-  e.preventDefault();
-  const f = e.dataTransfer.files[0];
-  if (!f) return;
-  if (f.name.toLowerCase().endsWith(".md") === false) {
-    showToast("请拖入 .md 文件");
-    return;
-  }
-  await openFile(f.path);
-});
+// Drag-and-drop is handled by Wails via OnFileDrop in main.go.
+// The "file-dropped" event listener (below) opens the file.
 
 async function openFile(path) {
   const res = await api.openFile(path);
@@ -53,9 +42,12 @@ async function openFile(path) {
   }
 }
 
-// Wails event listeners (from native macOS menu)
+// Wails event listeners (from native macOS menu + drag-and-drop)
 if (window.runtime && window.runtime.EventsOn) {
   window.runtime.EventsOn("open-file", (path) => {
+    openFile(path);
+  });
+  window.runtime.EventsOn("file-dropped", (path) => {
     openFile(path);
   });
   window.runtime.EventsOn("reload", () => {
