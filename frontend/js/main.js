@@ -49,9 +49,6 @@ async function openFile(path) {
       selected: cRes.data.items[0]?.hash || null,
       multiSelect: [],
     });
-    if (cRes.data.items.length > 0) {
-      window.__loadDiff && window.__loadDiff();
-    }
   }
 }
 

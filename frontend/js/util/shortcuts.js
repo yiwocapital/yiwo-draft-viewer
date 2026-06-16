@@ -13,7 +13,6 @@ export function initShortcuts() {
       let next = idx < 0 ? 0 : idx + (e.key === "ArrowDown" ? 1 : -1);
       next = Math.max(0, Math.min(s.commits.length - 1, next));
       setState({ selected: s.commits[next].hash, multiSelect: [] });
-      window.__loadDiff && window.__loadDiff();
     } else if ((e.metaKey || e.ctrlKey) && e.key === "c") {
       const sel = window.getSelection().toString();
       if (sel) {

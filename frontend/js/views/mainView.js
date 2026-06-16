@@ -1,8 +1,5 @@
 import { getState, subscribe } from "../store.js";
-
-function escapeHtml(s) {
-  return s.replace(/[&<>]/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[m]));
-}
+import { escapeHtml } from "../util/html.js";
 
 function renderSegments(segments) {
   return segments

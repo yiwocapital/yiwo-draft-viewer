@@ -2,6 +2,7 @@ import { getState, setState, subscribe } from "../store.js";
 import { api } from "../api.js";
 import { copyText } from "../util/clipboard.js";
 import { showToast } from "./toast.js";
+import { escapeHtml } from "../util/html.js";
 
 function timeAgo(ts) {
   const diff = Math.floor(Date.now() / 1000 - ts);
@@ -9,10 +10,6 @@ function timeAgo(ts) {
   if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`;
   return `${Math.floor(diff / 86400)}天前`;
-}
-
-function escapeHtml(s) {
-  return s.replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
 }
 
 function renderItem(c, selected) {
