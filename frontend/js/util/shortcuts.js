@@ -25,6 +25,20 @@ export function initShortcuts() {
           showToast("已复制");
         }
       }
+    } else if ((e.metaKey || e.ctrlKey) && (e.key === "=" || e.key === "+")) {
+      e.preventDefault();
+      const cur = getState().fontSize;
+      const next = Math.min(32, cur + 1);
+      api.setFontSize(next).then((res) => {
+        if (res.ok) setState({ fontSize: res.data.fontSize });
+      });
+    } else if ((e.metaKey || e.ctrlKey) && e.key === "-") {
+      e.preventDefault();
+      const cur = getState().fontSize;
+      const next = Math.max(10, cur - 1);
+      api.setFontSize(next).then((res) => {
+        if (res.ok) setState({ fontSize: res.data.fontSize });
+      });
     }
   });
 }

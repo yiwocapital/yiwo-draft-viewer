@@ -7,4 +7,8 @@
   font-size: 13px;
 }
 .wordcount-label { color: var(--muted); }
-.wordcount-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+.wordcount-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: 26px;
+}

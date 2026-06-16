@@ -15,17 +15,18 @@ import (
 )
 
 type Service struct {
-	ctx         context.Context
-	cfg         config.Config
-	configDir   string
-	currentPath string
-	content     string
-	title       string
-	summary     string
-	body        string
-	hasFm       bool
-	repo        *git.Repo
-	watcher     *fsnotify.Watcher
+	ctx             context.Context
+	cfg             config.Config
+	configDir       string
+	currentFontSize int
+	currentPath     string
+	content         string
+	title           string
+	summary         string
+	body            string
+	hasFm           bool
+	repo            *git.Repo
+	watcher         *fsnotify.Watcher
 }
 
 func NewService() *Service {
@@ -35,6 +36,10 @@ func NewService() *Service {
 func (s *Service) Startup(ctx context.Context) {
 	s.ctx = ctx
 	s.SetConfigDir(".")
+	if cfg, err := config.Load("."); err == nil {
+		s.cfg = cfg
+		s.currentFontSize = cfg.FontSize
+	}
 }
 
 func (s *Service) Ctx() context.Context {
@@ -69,6 +74,7 @@ func (s *Service) OpenFile(path string) model.Result {
 		"hasFrontmatter": fm.HasFrontmatter,
 		"charCount":      file.CountChars(content),
 		"hasGit":         repo != nil,
+		"fontSize":       s.cfg.FontSize,
 	}}
 }
 
@@ -156,6 +162,22 @@ func (s *Service) Reload() model.Result {
 		return model.Result{Ok: false, Error: "no file open"}
 	}
 	return s.OpenFile(s.currentPath)
+}
+
+func (s *Service) SetFontSize(size int) model.Result {
+	if size < 10 || size > 32 {
+		return model.Result{Ok: false, Error: "font size out of range (10-32)"}
+	}
+	s.cfg.FontSize = size
+	s.currentFontSize = size
+	if err := config.Save(s.configDir, s.cfg); err != nil {
+		return model.Result{Ok: false, Error: err.Error()}
+	}
+	return model.Result{Ok: true, Data: map[string]interface{}{"fontSize": size}}
+}
+
+func (s *Service) GetFontSize() int {
+	return s.cfg.FontSize
 }
 
 func (s *Service) startWatcher(path string) {

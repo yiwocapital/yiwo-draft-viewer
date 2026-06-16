@@ -15,4 +15,6 @@ export const api = {
   getDiff: (left, right) => call("GetDiff", left, right),
   copySection: (kind) => call("CopySection", kind),
   reload: () => call("Reload"),
+  setFontSize: (size) => call("SetFontSize", size),
+  getFontSize: () => call("GetFontSize"),
 };

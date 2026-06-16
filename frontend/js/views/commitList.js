@@ -50,26 +50,37 @@ function renderDetail(s) {
     <div class="detail-subject">${escapeHtml(subject)}</div>
     ${body ? `<div class="detail-body">${escapeHtml(body)}</div>` : ""}
     <div class="detail-meta">
-      <span class="detail-hash">${escapeHtml(c.hash)}</span>
+      <span class="detail-hash" title="点击复制">${escapeHtml(c.hash)}</span>
       <span class="detail-time">${new Date(c.timestamp * 1000).toLocaleString("zh-CN")}</span>
     </div>
   `;
 }
 
+let lastLoadKey = null;
+
 async function loadDiff() {
   const s = getState();
   if (!s.selected) return;
+
+  let key;
+  let args;
   if (s.multiSelect.length === 2) {
     const [a, b] = s.multiSelect;
-    const res = await api.getDiff(a, b);
-    if (res.ok) setState({ diff: res.data, charCount: res.data.charCount });
-    return;
+    key = `multi:${a}:${b}`;
+    args = [a, b];
+  } else {
+    const idx = s.commits.findIndex((c) => c.hash === s.selected);
+    if (idx < 0) return;
+    const cur = s.commits[idx].hash;
+    const prev = idx + 1 < s.commits.length ? s.commits[idx + 1].hash : "";
+    key = `single:${prev}:${cur}`;
+    args = [prev, cur];
   }
-  const idx = s.commits.findIndex((c) => c.hash === s.selected);
-  if (idx < 0) return;
-  const cur = s.commits[idx].hash;
-  const prev = idx + 1 < s.commits.length ? s.commits[idx + 1].hash : "";
-  const res = await api.getDiff(prev, cur);
+
+  if (key === lastLoadKey) return;
+  lastLoadKey = key;
+
+  const res = await api.getDiff(args[0], args[1]);
   if (res.ok) setState({ diff: res.data, charCount: res.data.charCount });
 }
 
@@ -94,7 +105,6 @@ export function init() {
     renderDetail(s);
   }
 
-  // Event delegation: one listener on the parent survives list rebuilds.
   list.addEventListener("click", async (e) => {
     const item = e.target.closest(".commit-item");
     if (!item) return;
@@ -117,7 +127,7 @@ export function init() {
       setState({ multiSelect: multi });
       return;
     }
-    if (s.selected === c.hash) return; // already selected, no-op
+    if (s.selected === c.hash) return;
     setState({ selected: c.hash, multiSelect: [] });
   });
 

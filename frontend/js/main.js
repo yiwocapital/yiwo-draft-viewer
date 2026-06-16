@@ -5,12 +5,14 @@ import { init as initMain } from "./views/mainView.js";
 import { init as initList } from "./views/commitList.js";
 import { init as initWc } from "./views/wordcount.js";
 import { init as initTb } from "./views/toolbar.js";
+import { init as initFs } from "./views/fontSize.js";
 import { initShortcuts } from "./util/shortcuts.js";
 
 initMain();
 initList();
 initWc();
 initTb();
+initFs();
 initShortcuts();
 
 // Drag-and-drop is handled by Wails via OnFileDrop in main.go.
@@ -31,6 +33,7 @@ async function openFile(path) {
     summary: res.data.summary,
     content: res.data.content,
     charCount: res.data.charCount,
+    fontSize: res.data.fontSize || 14,
   });
   const cRes = await api.listCommits();
   if (cRes.ok) {
@@ -69,3 +72,8 @@ if (window.runtime && window.runtime.EventsOn) {
 }
 
 window.__openFile = openFile;
+
+// Initialize font size from config
+api.getFontSize().then((size) => {
+  if (typeof size === "number") setState({ fontSize: size });
+});

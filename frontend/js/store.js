@@ -10,6 +10,7 @@ const state = {
   selected: null, // hash or "WORKING"
   diff: { segments: [], charCount: 0, static: false },
   multiSelect: [],
+  fontSize: 14,
 };
 
 const subs = new Set();

@@ -48,3 +48,12 @@ func Load(dir string) (Config, error) {
 	}
 	return cfg, nil
 }
+
+func Save(dir string, cfg Config) error {
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	path := filepath.Join(dir, "setting.local.yaml")
+	return os.WriteFile(path, data, 0644)
+}

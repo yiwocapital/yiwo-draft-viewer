@@ -78,10 +78,6 @@ export function init() {
       view.innerHTML = `<div class="diff">${renderStaticWithLineNumbers(s.content)}</div>`;
       return;
     }
-    if (!s.diff.segments || s.diff.segments.length === 0) {
-      view.innerHTML = `<div class="diff">${renderStaticWithLineNumbers(s.content)}</div>`;
-      return;
-    }
     const header = currentHeader(s);
     view.innerHTML = `${header}<div class="diff">${renderWithLineNumbers(s.diff.segments)}</div>`;
     scrollToFirstDiff(view);
