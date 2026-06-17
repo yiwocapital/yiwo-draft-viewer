@@ -7,9 +7,8 @@
 }
 .diff-line {
   display: list-item;
-  list-style: decimal inside;
+  list-style: decimal outside;
   padding-left: 3.5em;
-  text-indent: -3em;
   min-height: 1.6em;
   white-space: pre-wrap;
   word-break: break-word;
