@@ -13,21 +13,29 @@ make package               # 出 .app + .zip
 
 `wails build -m` 的 `-m` 标志跳过 `go mod tidy`，避免删除尚未被 import 的直接依赖。
 
-## 发布新版本
+## 开发 → 测试 → 发布
 
 ```bash
-# 1. 确保所有改动已 commit（除 docs/ 下的计划文档外）
+# 1. 修改代码后，本地测试（不污染 ~/Applications）
+make test-staging
+#   → 构建到 build/staging/
+#   → 复制到 /tmp/yiwo-test/yiwo-draft-viewer.app
+#   → 自动启动，输出 PID + 窗口标题
+
+# 2. 在 app 里手动验证。如果发现问题，修改代码后回到第 1 步
+pkill -f /tmp/yiwo-test/yiwo-draft-viewer.app  # 关闭测试 app
+
+# 3. 确认所有改动 commit
 git status
+git add -A && git commit -m "..."
 
-# 2. 创建 annotated tag
+# 4. 打 tag + 正式发布
 git tag -a v1.x.y -m "YiwoDraftViewer v1.x.y — <一句话变更说明>"
-
-# 3. 重新构建（Makefile 自动把 tag 名注入到窗口标题）
 make build
-
-# 4. 发布到用户级 Applications
 rsync -a --delete build/bin/yiwo-draft-viewer.app/ ~/Applications/yiwo-draft-viewer.app/
 ```
+
+临时测试 bundle 在 `/tmp/yiwo-test/`，与 `~/Applications/` 完全隔离。`make build` 输出到 `build/bin/`（正式发布用），`make staging` 输出到 `build/staging/`（测试用），互不干扰。
 
 发布后窗口标题会显示 `Yiwo Draft Viewer v1.x.y`。无 tag 时显示 `Yiwo Draft Viewer (dev/<short-sha>)`。
 
