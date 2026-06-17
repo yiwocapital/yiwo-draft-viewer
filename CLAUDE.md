@@ -87,3 +87,8 @@ docs/superpowers/
 - `menu.HelpMenu()` 不存在 —— 用 macOS 系统默认 Help
 - `OnFileDrop` 不是 `options.App` 字段，是 `runtime.OnFileDrop(ctx, cb)` 函数
 - `go-git` v5.19.x 的 `Log()` 回调返回 `*object.Commit`（不是 `*gogit.Object`），`Hash()` 用 `plumbing.NewHash`
+
+## 调试提示
+
+- **验证 ldflags 注入**：用 `strings` 查 `b92ca1a` 会失败，因为 Go 字符串内部表示有前缀字节污染，看到的是 `KDb92ca1a` 或 `Xbv1.1.0`。正确方法：用 `osascript` 启动 app 后读窗口标题（`tell application "System Events" to get title of window 1 of (first process whose name contains "yiwo-draft-viewer")`），或者用 `strings -a` 配合宽松 grep。
+- **clean-staging 副作用**：`make clean-staging` 会删 `/tmp/yiwo-test/`（连同上次测试遗留），且会删 `build/staging/`。所以 staging binary 不在源仓库里，需要时重新跑 `make staging` 或 `make test-staging`。
