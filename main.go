@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"embed"
+	"fmt"
+	"strings"
 
 	"github.com/yiwocapital/yiwo-draft-viewer/internal/app"
 	"github.com/yiwocapital/yiwo-draft-viewer/internal/config"
@@ -16,6 +18,10 @@ import (
 
 //go:embed all:frontend/dist
 var assets embed.FS
+
+// Version is set at build time via -ldflags "-X main.Version=<value>".
+// Default is "dev" for go run / quick local builds.
+var Version = "dev"
 
 func main() {
 	svc := app.NewService()
@@ -49,7 +55,7 @@ func main() {
 	AppMenu.Append(menu.WindowMenu())
 
 	err := wails.Run(&options.App{
-		Title:  "YiwoDraftViewer",
+		Title:  windowTitle(),
 		Width:  1280,
 		Height: 800,
 		Menu:   AppMenu,
@@ -93,4 +99,16 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func windowTitle() string {
+	if Version == "" {
+		return "Yiwo Draft Viewer"
+	}
+	// If Version looks like a plain git SHA (no "v" prefix, no dash),
+	// it's from --always on a no-tag state. Treat as dev build.
+	if !strings.HasPrefix(Version, "v") && !strings.Contains(Version, "-") {
+		return fmt.Sprintf("Yiwo Draft Viewer (dev/%s)", Version)
+	}
+	return fmt.Sprintf("Yiwo Draft Viewer %s", Version)
 }
