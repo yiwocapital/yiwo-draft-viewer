@@ -4,36 +4,32 @@
   line-height: 1.6;
   padding: 0;
   margin: 0;
-  counter-reset: line;
 }
 .diff-line {
-  display: block;
-  position: relative;
-  padding: 1px 0 1px 3.5em;
-  min-height: 1.6em;       /* matches line-height so empty lines show */
-  white-space: pre-wrap;
-  word-break: break-word;
+  display: flex;
+  padding: 1px 0;
+  min-height: 1.6em;
 }
-.diff-line::before {
-  counter-increment: line;
-  content: counter(line);
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 2.8em;
-  padding-right: 0.5em;
+.line-num {
+  flex: 0 0 3em;
   text-align: right;
+  padding-right: 0.5em;
   color: var(--muted);
   user-select: none;
   pointer-events: none;
   font-variant-numeric: tabular-nums;
 }
-.diff-line .diff-ins {
+.line-content {
+  flex: 1;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.line-content .diff-ins {
   background: var(--add-bg);
   color: var(--add-text);
   border-radius: 2px;
 }
-.diff-line .diff-del {
+.line-content .diff-del {
   background: var(--del-bg);
   color: var(--del-text);
   text-decoration: line-through;
