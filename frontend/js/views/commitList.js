@@ -76,19 +76,21 @@ async function loadDiff() {
     // Latest = topmost commit (newest). If file has WORKING, that's index 0;
     // otherwise commits[0] is HEAD. If the selected commit IS the latest, fall
     // back to parent-diff (so we don't compare a commit to itself).
-    const right = s.multiSelect[0];
+    const selected = s.multiSelect[0];
     const latest = s.commits[0]?.hash;
-    if (latest && latest !== right) {
-      key = `vsLatest:${latest}:${right}`;
-      args = [latest, right];
+    if (latest && latest !== selected) {
+      // left = older (selected), right = newer (latest) — same convention as 2-item mode
+      key = `vsLatest:${selected}:${latest}`;
+      args = [selected, latest];
     } else {
-      // Selected commit is itself the latest (or no latest available) —
-      // fall back to parent comparison.
-      const idx = s.commits.findIndex((c) => c.hash === right);
+      // Selected commit is itself the latest (or no latest available) — fall
+      // back to parent comparison. Use the same `[prev, cur]` convention.
+      const idx = s.commits.findIndex((c) => c.hash === selected);
       if (idx < 0) return;
+      const cur = s.commits[idx].hash;
       const prev = idx + 1 < s.commits.length ? s.commits[idx + 1].hash : "";
-      key = `single:${prev}:${right}`;
-      args = [prev, right];
+      key = `single:${prev}:${cur}`;
+      args = [prev, cur];
     }
   } else {
     // Plain single-select — diff against parent
