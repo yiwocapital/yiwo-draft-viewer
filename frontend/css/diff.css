@@ -1,24 +1,31 @@
 .diff {
+  counter-reset: line;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: var(--reading-font-size, 13px);
   line-height: 1.6;
   padding: 0;
   margin: 0;
 }
-.diff-line {
-  display: list-item;
-  list-style: decimal outside;
-  padding-left: 3.5em;
+.diff-row {
+  display: grid;
+  grid-template-columns: 3em 1fr;
+  column-gap: 0.5em;
   min-height: 1.6em;
-  white-space: pre-wrap;
-  word-break: break-word;
+  counter-increment: line;
 }
-.diff-line::marker {
+.diff-row::before {
+  content: counter(line);
+  grid-column: 1;
+  text-align: right;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
-  font-family: inherit;
-  font-size: inherit;
-  content: counter(list-item);
+  user-select: none;
+  pointer-events: none;
+}
+.diff-row > * {
+  grid-column: 2;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .diff-ins {
   background: var(--add-bg);

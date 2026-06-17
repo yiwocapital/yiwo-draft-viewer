@@ -117,3 +117,19 @@ window.addEventListener("resize", scheduleWindowSave);
 // Window-drag end: webview doesn't fire resize when the native window is moved
 // without resizing. mouseup captures the moment the drag ends.
 window.addEventListener("mouseup", scheduleWindowSave);
+
+// Strip leading line numbers from copied text.
+// `user-select: none` + `pointer-events: none` on `.diff-row::before` already
+// prevents most selections, but WebKit sometimes folds the pseudo-element
+// text into the selection rect. This is a defensive filter.
+document.addEventListener("copy", (e) => {
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  const text = sel.toString();
+  // Match leading "NNN " (digits + whitespace) at the start of each line.
+  const filtered = text.replace(/^[ \t]*\d+[ \t]+/gm, "");
+  if (filtered !== text) {
+    e.clipboardData.setData("text/plain", filtered);
+    e.preventDefault();
+  }
+});
