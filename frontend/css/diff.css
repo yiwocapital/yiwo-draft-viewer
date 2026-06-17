@@ -4,12 +4,28 @@
   line-height: 1.6;
   padding: 0;
   margin: 0;
+  counter-reset: line;
 }
 .diff-line {
-  display: flex;
+  display: block;
+  position: relative;
+  padding: 1px 0 1px 3.5em;
   white-space: pre-wrap;
   word-break: break-word;
-  padding: 1px 0;
+}
+.diff-line::before {
+  counter-increment: line;
+  content: counter(line);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2.8em;
+  padding-right: 0.5em;
+  text-align: right;
+  color: var(--muted);
+  user-select: none;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
 }
 .diff-line .diff-ins {
   background: var(--add-bg);
@@ -21,17 +37,6 @@
   color: var(--del-text);
   text-decoration: line-through;
   border-radius: 2px;
-}
-.line-num {
-  flex: 0 0 3.5em;
-  padding-right: 1em;
-  text-align: right;
-  color: var(--muted);
-  user-select: none;
-  font-variant-numeric: tabular-nums;
-}
-.line-text {
-  flex: 1;
 }
 .multi-banner {
   padding: 8px 12px;

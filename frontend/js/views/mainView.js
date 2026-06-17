@@ -20,23 +20,21 @@ function renderWithLineNumbers(segments) {
   }
   if (currentLine.length > 0) lines.push(currentLine);
 
-  return lines.map((lineSegs, i) => {
-    const num = String(i + 1).padStart(3, " ");
+  return lines.map((lineSegs) => {
     const inner = lineSegs.map((s) => {
       const safe = escapeHtml(s.text);
       if (s.op === 1) return `<span class="diff-ins">${safe}</span>`;
       if (s.op === 2) return `<span class="diff-del">${safe}</span>`;
       return safe;
     }).join("");
-    return `<div class="diff-line"><span class="line-num">${num}</span><span class="line-text">${inner}</span></div>`;
+    return `<div class="diff-line">${inner}</div>`;
   }).join("");
 }
 
 function renderStaticWithLineNumbers(content) {
   const lines = content.split("\n");
-  return lines.map((line, i) => {
-    const num = String(i + 1).padStart(3, " ");
-    return `<div class="diff-line"><span class="line-num">${num}</span><span class="line-text">${escapeHtml(line)}</span></div>`;
+  return lines.map((line) => {
+    return `<div class="diff-line">${escapeHtml(line)}</div>`;
   }).join("");
 }
 
