@@ -10,6 +10,7 @@
   display: block;
   position: relative;
   padding: 1px 0 1px 3.5em;
+  min-height: 1.6em;       /* matches line-height so empty lines show */
   white-space: pre-wrap;
   word-break: break-word;
 }

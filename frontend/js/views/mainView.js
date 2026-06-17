@@ -13,9 +13,8 @@ function renderWithLineNumbers(segments) {
         lines.push(currentLine);
         currentLine = [];
       }
-      if (parts[i].length > 0) {
-        currentLine.push({ op: seg.op, text: parts[i] });
-      }
+      // Always push, even when parts[i] === "" — preserves blank lines
+      currentLine.push({ op: seg.op, text: parts[i] });
     }
   }
   if (currentLine.length > 0) lines.push(currentLine);
