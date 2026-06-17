@@ -61,6 +61,7 @@ docs/superpowers/
 
 ## 关键约束
 
+- **构建后再测试**：`build/bin/yiwo-draft-viewer.app` 是临时构建产物。如果你修改了代码但没 `make build`，`open build/bin/...` 打开的可能是旧 binary。本地测试时优先 `open ~/Applications/yiwo-draft-viewer.app`，或修改代码后 `make clean build`。
 - **依赖管理**：直接依赖没被 `import` 前会被 `go mod tidy` 删掉。如果新增了还没用上的依赖，用 `wails build -m` 而不是 `wails build`，或暂时不要跑 tidy。
 - **行号渲染**：`frontend/css/diff.css` 用 CSS Grid + `::before` counter 实现。`.diff-row::before` 注入数字，`.diff-content` 包内容。**不要**用 `.diff-row > *` 选择器强制 column 2 —— text nodes 不被 `> *` 选中，会泄露到 column 1（行号列）。
 - **空行显示**：`renderWithLineNumbers` 不要用 `if (parts[i].length > 0)` 守卫 —— 空字符串也要 push 进去；`.diff-content` 加 `min-height: 1.6em`。
