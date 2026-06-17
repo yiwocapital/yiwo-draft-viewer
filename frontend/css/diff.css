@@ -22,8 +22,9 @@
   user-select: none;
   pointer-events: none;
 }
-.diff-row > * {
+.diff-content {
   grid-column: 2;
+  min-width: 0;
   white-space: pre-wrap;
   word-break: break-word;
 }

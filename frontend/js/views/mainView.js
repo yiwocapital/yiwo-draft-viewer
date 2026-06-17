@@ -26,14 +26,14 @@ function renderWithLineNumbers(segments) {
       if (s.op === 2) return `<span class="diff-del">${safe}</span>`;
       return safe;
     }).join("");
-    return `<div class="diff-row">${inner}</div>`;
+    return `<div class="diff-row"><div class="diff-content">${inner}</div></div>`;
   }).join("");
 }
 
 function renderStaticWithLineNumbers(content) {
   return content
     .split("\n")
-    .map((line) => `<div class="diff-row">${escapeHtml(line)}</div>`)
+    .map((line) => `<div class="diff-row"><div class="diff-content">${escapeHtml(line)}</div></div>`)
     .join("");
 }
 
