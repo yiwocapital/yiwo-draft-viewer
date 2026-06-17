@@ -4,7 +4,6 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"strings"
 
 	"github.com/yiwocapital/yiwo-draft-viewer/internal/app"
 	"github.com/yiwocapital/yiwo-draft-viewer/internal/config"
@@ -19,9 +18,10 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-// Version is set at build time via -ldflags "-X main.Version=<value>".
-// Default is "dev" for go run / quick local builds.
-var Version = "dev"
+// TagVersion and CommitID are set at build time via -ldflags.
+// Defaults are "dev" / "unknown" for go run / quick local builds.
+var TagVersion = "dev"
+var CommitID = "unknown"
 
 func main() {
 	svc := app.NewService()
@@ -102,13 +102,11 @@ func main() {
 }
 
 func windowTitle() string {
-	if Version == "" {
+	if CommitID == "" || CommitID == "unknown" {
 		return "Yiwo Draft Viewer"
 	}
-	// If Version looks like a plain git SHA (no "v" prefix, no dash),
-	// it's from --always on a no-tag state. Treat as dev build.
-	if !strings.HasPrefix(Version, "v") && !strings.Contains(Version, "-") {
-		return fmt.Sprintf("Yiwo Draft Viewer (dev/%s)", Version)
+	if TagVersion == "" || TagVersion == "dev" {
+		return fmt.Sprintf("Yiwo Draft Viewer (dev/%s)", CommitID)
 	}
-	return fmt.Sprintf("Yiwo Draft Viewer %s", Version)
+	return fmt.Sprintf("Yiwo Draft Viewer %s (%s)", TagVersion, CommitID)
 }
