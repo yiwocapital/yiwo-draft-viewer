@@ -38,7 +38,19 @@ function renderStaticWithLineNumbers(content) {
 }
 
 function multiSelectBanner(s) {
-  if (s.multiSelect.length !== 2) return "";
+  if (s.multiSelect.length === 0) return "";
+
+  if (s.multiSelect.length === 1) {
+    const sel = s.commits.find((c) => c.hash === s.multiSelect[0]);
+    if (!sel) return "";
+    const latest = s.commits[0];
+    if (latest && latest.hash === sel.hash) {
+      return `<div class="multi-banner">对比：${escapeHtml(sel.shortHash)} 与上一版（已是最新）</div>`;
+    }
+    return `<div class="multi-banner">对比：最新 ↔ ${escapeHtml(sel.shortHash)}</div>`;
+  }
+
+  // length === 2
   const [a, b] = s.multiSelect;
   const ca = s.commits.find((c) => c.hash === a);
   const cb = s.commits.find((c) => c.hash === b);
