@@ -6,30 +6,27 @@
   margin: 0;
 }
 .diff-line {
-  display: flex;
-  padding: 1px 0;
+  display: list-item;
+  list-style: decimal inside;
+  padding-left: 3.5em;
+  text-indent: -3em;
   min-height: 1.6em;
-}
-.line-num {
-  flex: 0 0 3em;
-  text-align: right;
-  padding-right: 0.5em;
-  color: var(--muted);
-  user-select: none;
-  pointer-events: none;
-  font-variant-numeric: tabular-nums;
-}
-.line-content {
-  flex: 1;
   white-space: pre-wrap;
   word-break: break-word;
 }
-.line-content .diff-ins {
+.diff-line::marker {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-family: inherit;
+  font-size: inherit;
+  content: counter(list-item);
+}
+.diff-ins {
   background: var(--add-bg);
   color: var(--add-text);
   border-radius: 2px;
 }
-.line-content .diff-del {
+.diff-del {
   background: var(--del-bg);
   color: var(--del-text);
   text-decoration: line-through;

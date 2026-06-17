@@ -19,22 +19,22 @@ function renderWithLineNumbers(segments) {
   }
   if (currentLine.length > 0) lines.push(currentLine);
 
-  return lines.map((lineSegs, i) => {
-    const num = i + 1;
+  return lines.map((lineSegs) => {
     const inner = lineSegs.map((s) => {
       const safe = escapeHtml(s.text);
       if (s.op === 1) return `<span class="diff-ins">${safe}</span>`;
       if (s.op === 2) return `<span class="diff-del">${safe}</span>`;
       return safe;
     }).join("");
-    return `<div class="diff-line"><span class="line-num" aria-hidden="true">${num}</span><span class="line-content">${inner}</span></div>`;
+    return `<div class="diff-line">${inner}</div>`;
   }).join("");
 }
 
 function renderStaticWithLineNumbers(content) {
-  return content.split("\n").map((line, i) => {
-    return `<div class="diff-line"><span class="line-num" aria-hidden="true">${i + 1}</span><span class="line-content">${escapeHtml(line)}</span></div>`;
-  }).join("");
+  return content
+    .split("\n")
+    .map((line) => `<div class="diff-line">${escapeHtml(line)}</div>`)
+    .join("");
 }
 
 function multiSelectBanner(s) {
