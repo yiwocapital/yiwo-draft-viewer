@@ -110,10 +110,9 @@ frontend/
     main.js, store.js, api.js
     views/  × 5                  mainView / commitList / wordcount / toolbar / toast
     util/  × 3                   clipboard / html / shortcuts
-docs/superpowers/
-  specs/                         设计规范
-  plans/                         实施计划
 ```
+
+> 本仓库**不**包含 `docs/superpowers/`（specs/plans/MANUAL_TEST_GUIDE.md）。那是本地开发工作目录，不放到 git 中。新开发者按本文件 + README.md 即可上手。
 
 ## 关键约束
 
@@ -145,7 +144,7 @@ docs/superpowers/
 
 ## 手动测试
 
-`docs/superpowers/MANUAL_TEST_GUIDE.md` 列了 7 个测试场景。用真实稿件 `~/Downloads/20260616-高盛评估霍尔木兹海峡重启情景/高盛评估霍尔木兹海峡重启情景-逐字稿.md` 验证（5 commit + 完整 YAML + 14KB 内容）。
+用一个 5 commit + 完整 YAML + ~14KB 内容的真实 Markdown 稿件做 e2e 验证（任何 5 commit 历史、有 YAML frontmatter 的 `.md` 文件都满足测试要求）。可放 `~/Downloads/` 下拖入测试。
 
 ## Wails v2.12.0 已知 API 差异
 
