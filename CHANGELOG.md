@@ -6,10 +6,33 @@
 
 ## [未发布]
 
+## [1.3.0] - 2026-06-18
+
+### 新增
+- **HTML 编辑注释自动剔除**：字数统计不再包含 `<!-- -->` 编辑笔记中的字符
+- **「折叠编辑注释」开关**：右栏复制按钮上方新增开关，开启后隐藏预览中的编辑注释，关闭时以浅灰色斜体显示
+- **隔离测试构建**：新增 `make staging` 和 `make test-staging`，构建到 `/tmp/yiwo-test/` 临时位置并启动，与正式发布版完全隔离
+- **开发 SOP 写入文档**：CLAUDE.md 中明确"每次代码修改后必须立即构建并启动测试"的强制流程
+- **窗口标题自动显示版本**：已发布版本显示 `Yiwo Draft Viewer v<tag>`，未发布版本显示 `Yiwo Draft Viewer (<commit>)`
+- **复制时英文标点自动转中文**：复制标题/摘要/正文/全部时，把紧邻中文的英文标点（`!`、`?`、`,`、`:`、`;`、`"`、`"`）转中文标点，仅修改剪贴板内容，原稿件不动
+- **多选 commit 对比模式**：Cmd+点击 commit 切换为橙色高亮，单击显示与最新 commit 对比，再 Cmd+点击另一个锁定为固定对比
+- **通读模式**：右栏「📖 通读全文」按钮或按 `Esc` 切换纯文本浏览视图
+- **状态栏**：稿件预览下方显示当前文件的绝对路径，点击复制
+- **Toast 通知分类**：复制成功 2.5 秒自动消失，错误需手动关闭
+- **窗口大小/位置记忆**：下次启动自动恢复（事件驱动保存，不再轮询）
+- **行号 + 段级 diff 高亮**：行级绿色新增/红色删除，同一行内多色混合
+- **README + CHANGELOG**：项目根目录新增标准开源风格的说明文档
+
 ### 修复
-- 注释在 diff 中被修改时，绿色新增和红色删除的样式仍能保留（叠加在注释灰色上）
-- 窗口标题规则：已发布版本只显示标签名，开发版本只显示 commit id
-- 切换「折叠编辑注释」时滚动位置不再跳到顶部
+- 跨 commit 对比：单选 vs latest 与双选固定对比的左右参数顺序不一致，导致颜色方向相反
+- 注释的修改颜色：当注释内容被修改时，diff-match-patch 切碎注释块导致 stripComments 失败
+- 切换「折叠编辑注释」时滚动位置跳到顶部
+- 切换「折叠编辑注释」时不会立即刷新（loadDiff 缓存 key 没有包含 foldComments 状态）
+- `Cmd+Q` 退出时触发 macOS 错误音（缺少 `menu.AppMenu()` 注册）
+- 文件修改自动刷新失效（前端监听 `"reload"` 与后端发射的 `"reloaded"` 事件名不匹配）
+- 窗口状态持久化路径改为 `~/Library/Application Support/YiwoDraftViewer/`，避免从不同目录启动时找不到配置
+- 切 commit 时频繁闪烁（loadDiff 反复触发）
+- 切换 commit 后多选状态残留 3 个高亮（多选逻辑未正确重置）
 
 ## [1.2.0] - 2026-06-18
 
@@ -62,7 +85,8 @@
 - 原生 macOS 菜单栏
 - 通读模式
 
-[未发布]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.2.0...HEAD
+[未发布]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/yiwocapital/yiwo-draft-viewer/releases/tag/v1.0.0
