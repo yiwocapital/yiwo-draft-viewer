@@ -1,6 +1,10 @@
 TAG_VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null | sed -E 's/-[0-9]+-g[0-9a-f]+$$//' | grep -v '^$$' || echo "dev")
 COMMIT_ID := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-LDFLAGS := -s -w -X main.TagVersion=$(TAG_VERSION) -X main.CommitID=$(COMMIT_ID)
+# RELEASE_VERSION is the tag name ONLY when HEAD is exactly on a tag;
+# otherwise it's empty. `git describe --tags --exact-match` returns non-zero
+# exit code when HEAD is not at any tag, so the || echo "" gives us empty.
+RELEASE_VERSION := $(shell git describe --tags --exact-match HEAD 2>/dev/null || echo "")
+LDFLAGS := -s -w -X main.TagVersion=$(TAG_VERSION) -X main.CommitID=$(COMMIT_ID) -X main.ReleaseVersion=$(RELEASE_VERSION)
 APP_NAME = yiwoDraftViewer
 BUILD_DIR = build/bin
 STAGING_DIR = build/staging

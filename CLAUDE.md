@@ -59,7 +59,7 @@ rsync -a --delete build/bin/yiwo-draft-viewer.app/ ~/Applications/yiwo-draft-vie
 
 临时测试 bundle 在 `/tmp/yiwo-test/`，与 `~/Applications/` 完全隔离。`make build` 输出到 `build/bin/`（正式发布用），`make staging` 输出到 `build/staging/`（测试用），互不干扰。
 
-发布后窗口标题会显示 `Yiwo Draft Viewer v1.x.y`。无 tag 时显示 `Yiwo Draft Viewer (dev/<short-sha>)`。
+发布后窗口标题会显示 `Yiwo Draft Viewer v1.x.y`。未发布的测试版本显示 `Yiwo Draft Viewer (<short-sha>)`。
 
 要替换系统级 `/Applications`（所有用户可见），需要 `sudo`；用户级 `~/Applications` 无需密码。
 

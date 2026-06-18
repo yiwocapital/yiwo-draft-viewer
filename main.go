@@ -18,10 +18,14 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-// TagVersion and CommitID are set at build time via -ldflags.
-// Defaults are "dev" / "unknown" for go run / quick local builds.
-var TagVersion = "dev"
-var CommitID = "unknown"
+// TagVersion, CommitID, and ReleaseVersion are set at build time via -ldflags.
+// Defaults are "dev" / "unknown" / "" for go run / quick local builds.
+// ReleaseVersion is non-empty only when HEAD is exactly on a tag.
+var (
+	TagVersion     = "dev"
+	CommitID       = "unknown"
+	ReleaseVersion = ""
+)
 
 func main() {
 	svc := app.NewService()
@@ -102,11 +106,13 @@ func main() {
 }
 
 func windowTitle() string {
+	// If HEAD is exactly on a tag, show only the tag (clean release look).
+	if ReleaseVersion != "" {
+		return fmt.Sprintf("Yiwo Draft Viewer %s", ReleaseVersion)
+	}
+	// Otherwise (unreleased / dev build), show only the commit id.
 	if CommitID == "" || CommitID == "unknown" {
 		return "Yiwo Draft Viewer"
 	}
-	if TagVersion == "" || TagVersion == "dev" {
-		return fmt.Sprintf("Yiwo Draft Viewer (dev/%s)", CommitID)
-	}
-	return fmt.Sprintf("Yiwo Draft Viewer %s (%s)", TagVersion, CommitID)
+	return fmt.Sprintf("Yiwo Draft Viewer (%s)", CommitID)
 }
