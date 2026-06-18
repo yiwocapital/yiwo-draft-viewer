@@ -13,6 +13,28 @@ make package               # 出 .app + .zip
 
 `wails build -m` 的 `-m` 标志跳过 `go mod tidy`，避免删除尚未被 import 的直接依赖。
 
+## 开发 SOP：每次修改后必须立即构建并启动测试
+
+**绝对规则**：任何代码修改（Go / JS / CSS / HTML / 配置）并 commit 完成后，**必须立即**执行：
+
+```bash
+PATH="$HOME/go/bin:$PATH" make test-staging
+```
+
+**不要等用户主动要求**。这一步会自动：
+
+1. `make clean-staging` 清理 `/tmp/yiwo-test/`
+2. `wails build` 编译最新代码到 `build/staging/`
+3. `scripts/test-staging.sh` 复制到 `/tmp/yiwo-test/yiwo-draft-viewer.app` 并启动
+4. 注销 Launch Services 旧条目，注册新位置
+5. 输出新 PID + 窗口标题（含最新 tag + commit id）
+
+`make test-staging` 会自动 kill 之前在 `/tmp/yiwo-test/` 跑的 instance 并替换，所以连续多次跑不会有端口冲突。
+
+`PATH` 前缀必须加，因为 `wails` CLI 不在默认 PATH（位于 `~/go/bin/wails`）。
+
+如果用户在你的回复中明确说"不要启动测试"或类似，则跳过。
+
 ## 开发 → 测试 → 发布
 
 ```bash
