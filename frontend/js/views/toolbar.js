@@ -21,8 +21,12 @@ export function init() {
   }
 
   if (foldCheckbox) {
-    foldCheckbox.addEventListener("change", () => {
-      setState({ foldComments: foldCheckbox.checked });
+    foldCheckbox.addEventListener("change", async () => {
+      const enabled = foldCheckbox.checked;
+      setState({ foldComments: enabled });
+      await api.setFoldComments(enabled);
+      // Re-fetch diff so the backend's stripComments takes effect
+      if (window.__loadDiff) window.__loadDiff();
     });
     subscribe((s) => {
       if (foldCheckbox.checked !== s.foldComments) {

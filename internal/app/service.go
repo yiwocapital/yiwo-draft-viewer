@@ -28,6 +28,7 @@ type Service struct {
 	hasFm           bool
 	repo            *git.Repo
 	watcher         *fsnotify.Watcher
+	foldComments    bool // NEW
 }
 
 func NewService() *Service {
@@ -150,6 +151,14 @@ func (s *Service) GetDiff(left, right string) model.Result {
 	rel, _ := filepath.Rel(s.repo.WorkTreePath(), s.currentPath)
 	leftContent := s.resolveContent(left, rel)
 	rightContent := s.resolveContent(right, rel)
+
+	// Strip comments when toggle is on. This must happen BEFORE diff.Compute
+	// so that no diff segment ever contains a comment fragment.
+	if s.foldComments {
+		leftContent = file.StripComments(leftContent)
+		rightContent = file.StripComments(rightContent)
+	}
+
 	if rightContent == "" {
 		return model.Result{Ok: true, Data: map[string]interface{}{
 			"segments": []interface{}{}, "charCount": 0, "static": true,
@@ -243,6 +252,11 @@ func (s *Service) SetFontSize(size int) model.Result {
 
 func (s *Service) GetFontSize() int {
 	return s.cfg.FontSize
+}
+
+func (s *Service) SetFoldComments(enabled bool) model.Result {
+	s.foldComments = enabled
+	return model.Result{Ok: true, Data: map[string]interface{}{"foldComments": enabled}}
 }
 
 func (s *Service) WindowChanged() model.Result {

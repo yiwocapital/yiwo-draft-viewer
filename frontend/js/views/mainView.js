@@ -37,44 +37,9 @@ function renderStaticWithLineNumbers(content) {
     .join("");
 }
 
-// stripCommentsInLines splits segments by '\n', strips HTML comments from
-// each line's joined text, drops empty lines, and re-merges into single-op
-// segments. This catches comment fragments that diff-match-patch split apart.
-function stripCommentsInLines(segments) {
-  const lines = [];
-  let currentLine = [];
-
-  for (const seg of segments) {
-    const parts = seg.text.split("\n");
-    for (let i = 0; i < parts.length; i++) {
-      if (i > 0) {
-        lines.push(currentLine);
-        currentLine = [];
-      }
-      if (parts[i].length > 0) {
-        currentLine.push({ op: seg.op, text: parts[i] });
-      }
-    }
-  }
-  if (currentLine.length > 0) lines.push(currentLine);
-
-  const out = [];
-  for (const lineSegs of lines) {
-    const joined = lineSegs.map((s) => s.text).join("");
-    const stripped = stripComments(joined);
-    if (stripped === "") continue; // entire line was a comment
-    // Pick the dominant op (first non-equal), or equal if all are equal
-    let mainOp = 0;
-    for (const s of lineSegs) {
-      if (s.op !== 0) {
-        mainOp = s.op;
-        break;
-      }
-    }
-    out.push({ op: mainOp, text: stripped });
-  }
-  return out;
-}
+// stripCommentsInLines removed — comment stripping now happens on the backend
+// (in Go) before diff.Compute runs, so segments returned to the frontend are
+// guaranteed to be free of comment fragments.
 
 function multiSelectBanner(s) {
   if (s.multiSelect.length === 0) return "";
@@ -110,7 +75,7 @@ export function init() {
   function refresh() {
     const s = getState();
     const statusBar = document.getElementById("status-bar");
-    // Status bar (lives outside #main-view in the DOM, so survives innerHTML rewrite)
+    // Status bar
     if (s.loaded && s.path) {
       if (statusBar.textContent !== s.path) statusBar.textContent = s.path;
       statusBar.classList.remove("hidden");
@@ -124,26 +89,25 @@ export function init() {
       view.innerHTML = `<div class="empty-hint">拖一个 .md 文件进来，或菜单 File → Open</div>`;
       return;
     }
-
-    // Strip static content if foldComments
-    const staticContent = s.foldComments ? stripComments(s.content) : s.content;
-
     if (s.selected === null) {
-      view.innerHTML = `<div class="diff">${renderStaticWithLineNumbers(staticContent)}</div>`;
+      // Read mode — plain content. Backend stripped comments if foldComments is on,
+      // but s.content was loaded via OpenFile before the toggle. Strip here too.
+      const content = s.foldComments ? stripComments(s.content) : s.content;
+      view.innerHTML = `<div class="diff">${renderStaticWithLineNumbers(content)}</div>`;
       return;
     }
 
-    // Prepare diff segments. If foldComments is on, strip at the LINE level so
-    // fragments of an HTML comment that diff-match-patch split apart are
-    // correctly removed.
-    const rawSegments = s.diff.segments;
-    const useFolded = s.foldComments && rawSegments && rawSegments.length > 0;
-    const segments = useFolded ? stripCommentsInLines(rawSegments) : rawSegments;
+    const segments = s.diff.segments;
 
     if (s.diff.static || !segments || segments.length === 0) {
-      view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderStaticWithLineNumbers(staticContent)}</div>`;
+      // For static fallback (rare), strip locally to honor toggle
+      const content = s.foldComments ? stripComments(s.content) : s.content;
+      view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderStaticWithLineNumbers(content)}</div>`;
       return;
     }
+
+    // Normal diff mode — segments were already stripped by Go (because the toggle
+    // is set on the backend before GetDiff was called). No client-side strip needed.
     view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderWithLineNumbers(segments)}</div>`;
     scrollToFirstDiff(view);
   }
