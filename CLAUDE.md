@@ -35,6 +35,26 @@ PATH="$HOME/go/bin:$PATH" make test-staging
 
 如果用户在你的回复中明确说"不要启动测试"或类似，则跳过。
 
+## 发布 SOP：每次正式发布前必须更新 README + CHANGELOG
+
+**绝对规则**：每次 `git tag v1.x.y` 之前，必须先把以下两份文档同步到这次发布要包含的代码状态：
+
+1. **CHANGELOG.md**
+   - 把 `[未发布]` 段改名为 `[v1.x.y] - <date>`（date 用发布当天）
+   - 把这次发布包含的所有 commit 整理成「新增 / 修复」两条目，用一句话说清楚"用户能感知到的变化"，不是 commit 列表
+   - 在文件末尾的链接对照表里把 `[未发布]` 的 compare URL 改成 `[v1.x.y]`（base 仍是上一个 tag）
+   - 在最下面追加一行 `[v1.x.y]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.(x.y-1)...v1.x.y`
+   - **绝不允许** 跳过 CHANGELOG 直接打 tag —— 终用户看不到 commit 历史，CHANGELOG 是唯一的变更说明
+
+2. **README.md**
+   - 检查「特性」一节：这次发布新增的功能 / 修复的用户能感知到的问题，需要反映出来（加一行或扩写一条）
+   - 检查「使用」一节：新增的命令、快捷键、菜单项、按钮都要写进去
+   - 检查「开发」一节：新加的 Makefile target、新加的 SOP、新加的约束要在「详见 CLAUDE.md」的列表里点到
+   - 检查「技术栈 / 项目结构」一节：新增的依赖（go.mod / 前端结构变化）要更新
+   - **绝不允许** 代码改了 README 不动 —— README 是给新用户 / 贡献者的第一份文档
+
+**违反此 SOP 的后果**：发布版本和文档脱节，CHANGELOG 漏写、README 没说新功能、新约束没记录到 CLAUDE.md，回归成本随版本数累积。
+
 ## 开发 → 测试 → 发布
 
 ```bash
@@ -51,7 +71,13 @@ pkill -f /tmp/yiwo-test/yiwo-draft-viewer.app  # 关闭测试 app
 git status
 git add -A && git commit -m "..."
 
-# 4. 打 tag + 正式发布
+# 4. 更新文档（发布前必做 SOP）
+#    - CHANGELOG.md: 把 [未发布] 改名为 [v1.x.y] - <date>，把变更按 Added/Fixed 分类写进去
+#    - README.md: 检查「特性」「使用」「技术栈」是否要同步（新功能、新命令、新约束等）
+git add README.md CHANGELOG.md
+git commit -m "docs: release v1.x.y"
+
+# 5. 打 tag + 正式发布
 git tag -a v1.x.y -m "YiwoDraftViewer v1.x.y — <一句话变更说明>"
 make build
 rsync -a --delete build/bin/yiwo-draft-viewer.app/ ~/Applications/yiwo-draft-viewer.app/
