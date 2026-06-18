@@ -39,6 +39,10 @@
   text-decoration: line-through;
   border-radius: 2px;
 }
+.diff-comment {
+  color: var(--line-num);
+  font-style: italic;
+}
 .multi-banner {
   padding: 8px 12px;
   background: #ddf4ff;

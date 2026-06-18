@@ -6,6 +6,7 @@ const (
 	DiffEqual DiffOp = iota
 	DiffInsert
 	DiffDelete
+	DiffComment // HTML comment fragment inside the diff (gray-styled in UI)
 )
 
 type DiffSegment struct {

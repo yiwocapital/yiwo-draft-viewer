@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"regexp"
 	"time"
 
 	"github.com/yiwocapital/yiwo-draft-viewer/internal/config"
@@ -165,6 +166,14 @@ func (s *Service) GetDiff(left, right string) model.Result {
 		}}
 	}
 	segs := diff.Compute(leftContent, rightContent)
+
+	// Split out comment fragments so the frontend can render them gray.
+	// (Skip this when foldComments is on — there shouldn't be any comments
+	// in leftContent/rightContent at that point.)
+	if !s.foldComments {
+		segs = splitOutComments(segs)
+	}
+
 	flat := make([]map[string]interface{}, 0, len(segs))
 	for _, sg := range segs {
 		flat = append(flat, map[string]interface{}{"op": int(sg.Op), "text": sg.Text})
@@ -315,6 +324,32 @@ func (s *Service) startWatcher(path string) {
 			}
 		}
 	}()
+}
+
+var htmlCommentRE = regexp.MustCompile(`(?s)<!--.*?-->`)
+
+// splitOutComments walks each segment and splits it into pieces, where any
+// piece matching an HTML comment is emitted as its own DiffComment segment.
+func splitOutComments(segs []model.DiffSegment) []model.DiffSegment {
+	var out []model.DiffSegment
+	for _, s := range segs {
+		text := s.Text
+		if text == "" {
+			continue
+		}
+		last := 0
+		for _, m := range htmlCommentRE.FindAllStringIndex(text, -1) {
+			if m[0] > last {
+				out = append(out, model.DiffSegment{Op: s.Op, Text: text[last:m[0]]})
+			}
+			out = append(out, model.DiffSegment{Op: model.DiffComment, Text: text[m[0]:m[1]]})
+			last = m[1]
+		}
+		if last < len(text) {
+			out = append(out, model.DiffSegment{Op: s.Op, Text: text[last:]})
+		}
+	}
+	return out
 }
 
 // silence unused-import warning when fmt not referenced elsewhere.

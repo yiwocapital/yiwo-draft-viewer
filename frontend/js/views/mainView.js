@@ -24,6 +24,7 @@ function renderWithLineNumbers(segments) {
       const safe = escapeHtml(s.text);
       if (s.op === 1) return `<span class="diff-ins">${safe}</span>`;
       if (s.op === 2) return `<span class="diff-del">${safe}</span>`;
+      if (s.op === 3) return `<span class="diff-comment">${safe}</span>`;
       return safe;
     }).join("");
     return `<div class="diff-row"><div class="diff-content">${inner}</div></div>`;
@@ -31,9 +32,21 @@ function renderWithLineNumbers(segments) {
 }
 
 function renderStaticWithLineNumbers(content) {
+  const commentRE = /<!--[\s\S]*?-->/g;
   return content
     .split("\n")
-    .map((line) => `<div class="diff-row"><div class="diff-content">${escapeHtml(line)}</div></div>`)
+    .map((line) => {
+      // Highlight comments in gray; escape everything
+      let html = "";
+      let last = 0;
+      for (const m of line.matchAll(commentRE)) {
+        html += escapeHtml(line.slice(last, m.index));
+        html += `<span class="diff-comment">${escapeHtml(line.slice(m.index, m.index + m[0].length))}</span>`;
+        last = m.index + m[0].length;
+      }
+      html += escapeHtml(line.slice(last));
+      return `<div class="diff-row"><div class="diff-content">${html}</div></div>`;
+    })
     .join("");
 }
 
