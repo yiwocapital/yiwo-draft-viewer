@@ -100,6 +100,23 @@ docs/superpowers/
 - **窗口大小位置持久化**：`internal/app/service.go` 的 `Startup` 用 `~/Library/Application Support/YiwoDraftViewer/`，不要用 `"."`（启动目录不稳定）。前端 resize + mouseup 事件触发 `WindowChanged()`；`OnBeforeClose` 兜底。
 - **配置文件位置**：`~/Library/Application Support/YiwoDraftViewer/setting.local.yaml`，不要写项目根。
 
+## 窗口标题版本号规则（强制执行标准）
+
+窗口标题由 `main.go::windowTitle()` 根据 ldflags 注入的 `ReleaseVersion` / `CommitID` 决定。**两套规则，必须严格遵守**：
+
+| 版本类型 | 触发条件 | 标题样例 | 注入 ldflags |
+|---------|---------|---------|------------|
+| **测试版本**（未发布） | `make staging` / `make test-staging` | `Yiwo Draft Viewer (77e8d8f)` | 仅 `TagVersion` + `CommitID`，**不注入** `ReleaseVersion` |
+| **正式发布版** | `make build` + rsync 到 `~/Applications/` | `Yiwo Draft Viewer v1.3.0` | `TagVersion` + `CommitID` + `ReleaseVersion`（仅当 HEAD 正好在 tag 上时非空） |
+
+**绝对规则**：
+
+1. **测试版本只显示 commit id，不显示 tag**。即使刚 `git tag v1.x.y` 之后 HEAD 正好在 tag 上，`make test-staging` 也必须显示 commit id（例：`Yiwo Draft Viewer (f65b7cc)`），而不是 `v1.x.y`。这是因为：测试版本对应"还没有发布的代码"，终用户看到 tag 会以为已经发布；commit id 才能让开发者一眼分辨这是哪次构建。
+2. **正式发布版只显示 tag，不显示 commit id**。`make build` 时如果 HEAD 正好在 tag 上，`ReleaseVersion=v1.x.y` 注入，显示 `Yiwo Draft Viewer v1.x.y`；终用户不需要理解 commit hash。
+3. **绝不允许**测试版本窗口出现 `Yiwo Draft Viewer v1.x.y` 这种带 tag 的标题。这违反"测试版本未发布"的语义。
+4. **Makefile 已强制**：`staging` target 用 `TEST_LDFLAGS`（**不含** `ReleaseVersion`），`build` target 用 `LDFLAGS`（含 `ReleaseVersion`）。任何手动改 ldflags 的操作都不能破坏这个分离 —— 否则要么测试显示 tag（违反规则 3），要么发布版丢失 tag（违反规则 2）。
+5. **验证方法**：每次跑完 `make test-staging`，看脚本输出的 `Title:` 行，必须包含 `(<short-sha>)` 模式；跑完 `make build` 后窗口标题必须以 ` v` + tag 结尾。如果不符合，**立即修 ldflags / Makefile，不要先 commit**。
+
 ## 手动测试
 
 `docs/superpowers/MANUAL_TEST_GUIDE.md` 列了 7 个测试场景。用真实稿件 `~/Downloads/20260616-高盛评估霍尔木兹海峡重启情景/高盛评估霍尔木兹海峡重启情景-逐字稿.md` 验证（5 commit + 完整 YAML + 14KB 内容）。

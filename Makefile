@@ -4,7 +4,13 @@ COMMIT_ID := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 # otherwise it's empty. `git describe --tags --exact-match` returns non-zero
 # exit code when HEAD is not at any tag, so the || echo "" gives us empty.
 RELEASE_VERSION := $(shell git describe --tags --exact-match HEAD 2>/dev/null || echo "")
-LDFLAGS := -s -w -X main.TagVersion=$(TAG_VERSION) -X main.CommitID=$(COMMIT_ID) -X main.ReleaseVersion=$(RELEASE_VERSION)
+# TEST_LDFLAGS intentionally omits ReleaseVersion: staging builds must always
+# show the commit id only (e.g. "Yiwo Draft Viewer (77e8d8f)"), never a tag.
+# Without this, staging right after `git tag v1.x.y` runs with HEAD exactly
+# on the tag and shows v1.x.y — same as a released build — which violates
+# the window-title rule in CLAUDE.md.
+TEST_LDFLAGS := -s -w -X main.TagVersion=$(TAG_VERSION) -X main.CommitID=$(COMMIT_ID)
+LDFLAGS := $(TEST_LDFLAGS) -X main.ReleaseVersion=$(RELEASE_VERSION)
 APP_NAME = yiwoDraftViewer
 BUILD_DIR = build/bin
 STAGING_DIR = build/staging
@@ -24,7 +30,7 @@ build:
 
 staging: clean-staging
 	@mkdir -p $(STAGING_DIR)
-	wails build -m -ldflags "$(LDFLAGS)"
+	wails build -m -ldflags "$(TEST_LDFLAGS)"
 	mv build/bin/yiwo-draft-viewer.app $(STAGING_DIR)/
 	@echo "Staging bundle: $(STAGING_DIR)/yiwo-draft-viewer.app"
 
