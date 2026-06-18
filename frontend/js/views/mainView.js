@@ -37,6 +37,45 @@ function renderStaticWithLineNumbers(content) {
     .join("");
 }
 
+// stripCommentsInLines splits segments by '\n', strips HTML comments from
+// each line's joined text, drops empty lines, and re-merges into single-op
+// segments. This catches comment fragments that diff-match-patch split apart.
+function stripCommentsInLines(segments) {
+  const lines = [];
+  let currentLine = [];
+
+  for (const seg of segments) {
+    const parts = seg.text.split("\n");
+    for (let i = 0; i < parts.length; i++) {
+      if (i > 0) {
+        lines.push(currentLine);
+        currentLine = [];
+      }
+      if (parts[i].length > 0) {
+        currentLine.push({ op: seg.op, text: parts[i] });
+      }
+    }
+  }
+  if (currentLine.length > 0) lines.push(currentLine);
+
+  const out = [];
+  for (const lineSegs of lines) {
+    const joined = lineSegs.map((s) => s.text).join("");
+    const stripped = stripComments(joined);
+    if (stripped === "") continue; // entire line was a comment
+    // Pick the dominant op (first non-equal), or equal if all are equal
+    let mainOp = 0;
+    for (const s of lineSegs) {
+      if (s.op !== 0) {
+        mainOp = s.op;
+        break;
+      }
+    }
+    out.push({ op: mainOp, text: stripped });
+  }
+  return out;
+}
+
 function multiSelectBanner(s) {
   if (s.multiSelect.length === 0) return "";
 
@@ -80,29 +119,27 @@ export function init() {
       statusBar.classList.add("hidden");
     }
 
-    // Strip comments if toggle is on
-    let segments = s.diff.segments;
-    let staticContent = s.content;
-    if (s.foldComments) {
-      if (segments) {
-        segments = segments.map((seg) => ({
-          ...seg,
-          text: stripComments(seg.text),
-        })).filter((seg) => seg.text.length > 0);
-      }
-      staticContent = stripComments(s.content);
-    }
-
     // Main content
     if (!s.loaded) {
       view.innerHTML = `<div class="empty-hint">拖一个 .md 文件进来，或菜单 File → Open</div>`;
       return;
     }
+
+    // Strip static content if foldComments
+    const staticContent = s.foldComments ? stripComments(s.content) : s.content;
+
     if (s.selected === null) {
-      // Read mode — plain content (comments stripped if toggle on)
       view.innerHTML = `<div class="diff">${renderStaticWithLineNumbers(staticContent)}</div>`;
       return;
     }
+
+    // Prepare diff segments. If foldComments is on, strip at the LINE level so
+    // fragments of an HTML comment that diff-match-patch split apart are
+    // correctly removed.
+    const rawSegments = s.diff.segments;
+    const useFolded = s.foldComments && rawSegments && rawSegments.length > 0;
+    const segments = useFolded ? stripCommentsInLines(rawSegments) : rawSegments;
+
     if (s.diff.static || !segments || segments.length === 0) {
       view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderStaticWithLineNumbers(staticContent)}</div>`;
       return;
