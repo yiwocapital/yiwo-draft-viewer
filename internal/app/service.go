@@ -332,31 +332,103 @@ func (s *Service) startWatcher(path string) {
 
 var htmlCommentRE = regexp.MustCompile(`(?s)<!--.*?-->`)
 
-// splitOutComments walks each segment and splits it into pieces, where any
-// piece matching an HTML comment is emitted as its own segment with
-// IsComment=true. The parent op is preserved so insert/delete coloring
-// still applies to the comment text, layered on top of the gray italic style.
+// splitOutComments emits each character's source segment (its op) plus a
+// running "is the cursor inside an HTML comment?" flag. It re-emits characters
+// as segments, joining adjacent characters that share (op, isComment).
+//
+// This correctly handles comments that diff-match-patch splits across segments
+// (e.g. when a comment is modified between two versions): the `<!--...-->`
+// regex is applied to the reconstructed left-side and right-side text, not to
+// each segment in isolation, so cross-segment boundaries don't break the match.
 func splitOutComments(segs []model.DiffSegment) []model.DiffSegment {
-	var out []model.DiffSegment
+	// We walk each character and remember which side (left/right) of the diff
+	// it belongs to. Equal characters appear on both sides; delete characters
+	// only on the left; insert characters only on the right. We build the
+	// left-side text (equal+delete) and right-side text (equal+insert) so we
+	// can run the comment regex on each, and then mark a character as being
+	// inside a comment if it falls inside any match on its own side.
+	type charRec struct {
+		op     model.DiffOp
+		raw    string // original UTF-8 bytes of the rune
+		leftIx int    // byte offset in left text, or -1 if not on left
+		rightIx int   // byte offset in right text, or -1 if not on right
+	}
+	chars := make([]charRec, 0)
+	leftBuf := make([]byte, 0)
+	rightBuf := make([]byte, 0)
 	for _, s := range segs {
-		text := s.Text
-		if text == "" {
-			continue
-		}
-		last := 0
-		for _, m := range htmlCommentRE.FindAllStringIndex(text, -1) {
-			if m[0] > last {
-				out = append(out, model.DiffSegment{Op: s.Op, Text: text[last:m[0]]})
+		for _, r := range s.Text {
+			raw := string(r)
+			rec := charRec{op: s.Op, raw: raw}
+			if s.Op != model.DiffInsert {
+				rec.leftIx = len(leftBuf)
+				leftBuf = append(leftBuf, raw...)
+			} else {
+				rec.leftIx = -1
 			}
-			// Preserve parent op so insert/delete coloring still applies,
-			// but mark the text as a comment so the UI can apply the gray + italic style.
-			out = append(out, model.DiffSegment{Op: s.Op, Text: text[m[0]:m[1]], IsComment: true})
-			last = m[1]
-		}
-		if last < len(text) {
-			out = append(out, model.DiffSegment{Op: s.Op, Text: text[last:]})
+			if s.Op != model.DiffDelete {
+				rec.rightIx = len(rightBuf)
+				rightBuf = append(rightBuf, raw...)
+			} else {
+				rec.rightIx = -1
+			}
+			chars = append(chars, rec)
 		}
 	}
+
+	// Run the regex on each side.
+	leftMatches := htmlCommentRE.FindAllIndex(leftBuf, -1)
+	rightMatches := htmlCommentRE.FindAllIndex(rightBuf, -1)
+
+	// Helper: returns true if byte offset x falls inside any of the given matches.
+	contains := func(matches [][]int, x int) bool {
+		for _, m := range matches {
+			if x >= m[0] && x < m[1] {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Mark each character as being inside a comment if its left offset is
+	// inside a left-side match, or its right offset is inside a right-side
+	// match.
+	inComment := make([]bool, len(chars))
+	for ci, c := range chars {
+		leftHit := c.leftIx >= 0 && contains(leftMatches, c.leftIx)
+		rightHit := c.rightIx >= 0 && contains(rightMatches, c.rightIx)
+		inComment[ci] = leftHit || rightHit
+	}
+
+	if len(chars) == 0 {
+		return nil
+	}
+
+	// Walk the chars, emitting segments. Group consecutive chars that share
+	// (op, isComment). The output preserves the original segment ordering.
+	var out []model.DiffSegment
+	var buf []byte
+	var curOp model.DiffOp
+	var curComment bool
+	flush := func() {
+		if len(buf) == 0 {
+			return
+		}
+		out = append(out, model.DiffSegment{Op: curOp, Text: string(buf), IsComment: curComment})
+		buf = buf[:0]
+	}
+	for ci, c := range chars {
+		if len(buf) == 0 {
+			curOp = c.op
+			curComment = inComment[ci]
+		} else if c.op != curOp || inComment[ci] != curComment {
+			flush()
+			curOp = c.op
+			curComment = inComment[ci]
+		}
+		buf = append(buf, c.raw...)
+	}
+	flush()
 	return out
 }
 
