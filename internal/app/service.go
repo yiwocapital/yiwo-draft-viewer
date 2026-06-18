@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/yiwocapital/yiwo-draft-viewer/internal/config"
@@ -219,7 +220,7 @@ func (s *Service) CopySection(kind string) model.Result {
 	default:
 		return model.Result{Ok: false, Error: "unknown section"}
 	}
-	return model.Result{Ok: true, Data: map[string]interface{}{"text": text}}
+	return model.Result{Ok: true, Data: map[string]interface{}{"text": cleanForCopy(text)}}
 }
 
 func (s *Service) Reload() model.Result {
@@ -330,7 +331,28 @@ func (s *Service) startWatcher(path string) {
 	}()
 }
 
-var htmlCommentRE = regexp.MustCompile(`(?s)<!--.*?-->`)
+var (
+	htmlCommentRE = regexp.MustCompile(`(?s)<!--.*?-->`)
+	blankLineRE   = regexp.MustCompile(`\n{3,}`)
+)
+
+// cleanForCopy removes HTML comment blocks and collapses runs of 3+ newlines
+// (i.e. 2+ consecutive blank lines) into a single blank line, then trims any
+// leading/trailing whitespace. Used for all clipboard output so the user pastes
+// clean text without author notes or excessive spacing.
+//
+// The blank-line collapse runs in a loop because stripping a comment that
+// sits between blank lines can leave a longer run than `\n{3,}` matches in a
+// single pass (e.g. `a\n\n\n\n<!-- x -->\nb` becomes `a\n\n\n\n\nb` after
+// the comment is removed).
+func cleanForCopy(text string) string {
+	text = htmlCommentRE.ReplaceAllString(text, "")
+	for blankLineRE.MatchString(text) {
+		text = blankLineRE.ReplaceAllString(text, "\n\n")
+	}
+	text = strings.TrimSpace(text)
+	return text
+}
 
 // splitOutComments emits each character's source segment (its op) plus a
 // running "is the cursor inside an HTML comment?" flag. It re-emits characters

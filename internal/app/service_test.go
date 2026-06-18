@@ -98,3 +98,55 @@ func TestCopySection_NoFrontmatter(t *testing.T) {
 		t.Fatal("expected failure when no frontmatter")
 	}
 }
+
+func TestCleanForCopy(t *testing.T) {
+	cases := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{
+			name: "no comments or extra blanks",
+			in:   "para1\npara2",
+			want: "para1\npara2",
+		},
+		{
+			name: "strips multi-line comment",
+			in:   "before\n<!--\n  long editor note\n  spans lines\n-->\nafter",
+			want: "before\n\nafter",
+		},
+		{
+			name: "strips inline comment",
+			in:   "text <!-- inline --> more",
+			want: "text  more",
+		},
+		{
+			name: "collapses 3+ newlines to 2",
+			in:   "a\n\n\n\nb",
+			want: "a\n\nb",
+		},
+		{
+			name: "preserves single blank line",
+			in:   "a\n\nb",
+			want: "a\n\nb",
+		},
+		{
+			name: "removes leading/trailing blank lines",
+			in:   "\n\n\na\nb\n\n\n",
+			want: "a\nb",
+		},
+		{
+			name: "combines comment + extra blanks",
+			in:   "a\n\n\n\n<!-- note -->\nb",
+			want: "a\n\nb",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := cleanForCopy(tc.in)
+			if got != tc.want {
+				t.Errorf("cleanForCopy(%q) = %q, want %q", tc.in, got, tc.want)
+			}
+		})
+	}
+}
