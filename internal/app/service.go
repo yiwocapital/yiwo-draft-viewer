@@ -176,7 +176,11 @@ func (s *Service) GetDiff(left, right string) model.Result {
 
 	flat := make([]map[string]interface{}, 0, len(segs))
 	for _, sg := range segs {
-		flat = append(flat, map[string]interface{}{"op": int(sg.Op), "text": sg.Text})
+		item := map[string]interface{}{"op": int(sg.Op), "text": sg.Text}
+		if sg.IsComment {
+			item["isComment"] = true
+		}
+		flat = append(flat, item)
 	}
 	return model.Result{Ok: true, Data: map[string]interface{}{
 		"segments":  flat,
@@ -329,7 +333,9 @@ func (s *Service) startWatcher(path string) {
 var htmlCommentRE = regexp.MustCompile(`(?s)<!--.*?-->`)
 
 // splitOutComments walks each segment and splits it into pieces, where any
-// piece matching an HTML comment is emitted as its own DiffComment segment.
+// piece matching an HTML comment is emitted as its own segment with
+// IsComment=true. The parent op is preserved so insert/delete coloring
+// still applies to the comment text, layered on top of the gray italic style.
 func splitOutComments(segs []model.DiffSegment) []model.DiffSegment {
 	var out []model.DiffSegment
 	for _, s := range segs {
@@ -342,7 +348,9 @@ func splitOutComments(segs []model.DiffSegment) []model.DiffSegment {
 			if m[0] > last {
 				out = append(out, model.DiffSegment{Op: s.Op, Text: text[last:m[0]]})
 			}
-			out = append(out, model.DiffSegment{Op: model.DiffComment, Text: text[m[0]:m[1]]})
+			// Preserve parent op so insert/delete coloring still applies,
+			// but mark the text as a comment so the UI can apply the gray + italic style.
+			out = append(out, model.DiffSegment{Op: s.Op, Text: text[m[0]:m[1]], IsComment: true})
 			last = m[1]
 		}
 		if last < len(text) {

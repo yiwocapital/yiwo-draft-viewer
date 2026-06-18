@@ -14,7 +14,7 @@ function renderWithLineNumbers(segments) {
         currentLine = [];
       }
       // Always push, even when parts[i] === "" — preserves blank lines
-      currentLine.push({ op: seg.op, text: parts[i] });
+      currentLine.push({ op: seg.op, text: parts[i], isComment: seg.isComment });
     }
   }
   if (currentLine.length > 0) lines.push(currentLine);
@@ -22,9 +22,15 @@ function renderWithLineNumbers(segments) {
   return lines.map((lineSegs) => {
     const inner = lineSegs.map((s) => {
       const safe = escapeHtml(s.text);
+      if (s.isComment) {
+        // Comment fragment: layer gray + italic on top of insert/delete coloring
+        let cls = "diff-comment";
+        if (s.op === 1) cls += " diff-comment-ins";
+        else if (s.op === 2) cls += " diff-comment-del";
+        return `<span class="${cls}">${safe}</span>`;
+      }
       if (s.op === 1) return `<span class="diff-ins">${safe}</span>`;
       if (s.op === 2) return `<span class="diff-del">${safe}</span>`;
-      if (s.op === 3) return `<span class="diff-comment">${safe}</span>`;
       return safe;
     }).join("");
     return `<div class="diff-row"><div class="diff-content">${inner}</div></div>`;
@@ -97,6 +103,10 @@ export function init() {
       statusBar.classList.add("hidden");
     }
 
+    // Capture scroll position BEFORE innerHTML rewrite (innerHTML reset
+    // drops scroll position to 0).
+    const prevScrollTop = view.scrollTop;
+
     // Main content
     if (!s.loaded) {
       view.innerHTML = `<div class="empty-hint">拖一个 .md 文件进来，或菜单 File → Open</div>`;
@@ -107,6 +117,7 @@ export function init() {
       // but s.content was loaded via OpenFile before the toggle. Strip here too.
       const content = s.foldComments ? stripComments(s.content) : s.content;
       view.innerHTML = `<div class="diff">${renderStaticWithLineNumbers(content)}</div>`;
+      view.scrollTop = prevScrollTop;
       return;
     }
 
@@ -116,13 +127,21 @@ export function init() {
       // For static fallback (rare), strip locally to honor toggle
       const content = s.foldComments ? stripComments(s.content) : s.content;
       view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderStaticWithLineNumbers(content)}</div>`;
+      view.scrollTop = prevScrollTop;
       return;
     }
 
     // Normal diff mode — segments were already stripped by Go (because the toggle
     // is set on the backend before GetDiff was called). No client-side strip needed.
     view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderWithLineNumbers(segments)}</div>`;
-    scrollToFirstDiff(view);
+
+    // Only auto-scroll to first diff on the initial render. If the user
+    // had already scrolled (prevScrollTop > 0), preserve their position.
+    if (prevScrollTop === 0) {
+      scrollToFirstDiff(view);
+    } else {
+      view.scrollTop = prevScrollTop;
+    }
   }
 
   subscribe(refresh);

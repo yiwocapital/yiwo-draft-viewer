@@ -6,12 +6,12 @@ const (
 	DiffEqual DiffOp = iota
 	DiffInsert
 	DiffDelete
-	DiffComment // HTML comment fragment inside the diff (gray-styled in UI)
 )
 
 type DiffSegment struct {
-	Op   DiffOp
-	Text string
+	Op        DiffOp
+	Text      string
+	IsComment bool `json:"isComment,omitempty"`
 }
 
 type Commit struct {

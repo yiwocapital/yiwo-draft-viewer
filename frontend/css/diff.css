@@ -28,20 +28,29 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
-.diff-ins {
+.diff-content .diff-ins {
   background: var(--add-bg);
   color: var(--add-text);
   border-radius: 2px;
 }
-.diff-del {
+.diff-content .diff-del {
   background: var(--del-bg);
   color: var(--del-text);
   text-decoration: line-through;
   border-radius: 2px;
 }
-.diff-comment {
+.diff-content .diff-comment {
   color: var(--line-num);
   font-style: italic;
+}
+.diff-content .diff-comment.diff-comment-ins {
+  background: var(--add-bg);
+  color: var(--line-num);
+}
+.diff-content .diff-comment.diff-comment-del {
+  background: var(--del-bg);
+  color: var(--line-num);
+  text-decoration: line-through;
 }
 .multi-banner {
   padding: 8px 12px;
