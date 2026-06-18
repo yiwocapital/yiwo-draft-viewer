@@ -37,3 +37,23 @@ func TestCountChars_Mixed(t *testing.T) {
 		t.Errorf("expected 9, got %d", n)
 	}
 }
+
+func TestCountChars_StripsComments(t *testing.T) {
+	text := "正文文字<!-- 这是编辑注释，不应计入字数 -->更多正文"
+	n := CountChars(text)
+	// After stripping the comment block, the result is "正文文字更多正文"
+	// (the spaces flanking the comment are also removed as part of the strip).
+	// 8 non-space chars, 0 spaces = 8.
+	if n != 8 {
+		t.Errorf("expected 8, got %d", n)
+	}
+}
+
+func TestCountChars_StripsMultilineComments(t *testing.T) {
+	text := "上文\n<!--\n多行注释\n第二行\n-->\n下文"
+	n := CountChars(text)
+	// After stripping: "上文\n下文" — 4 chars + 1 newline (collapsed to space) = 5.
+	if n != 5 {
+		t.Errorf("expected 5, got %d", n)
+	}
+}

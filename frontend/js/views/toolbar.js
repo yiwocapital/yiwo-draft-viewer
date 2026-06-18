@@ -1,4 +1,4 @@
-import { getState, subscribe } from "../store.js";
+import { getState, setState, subscribe } from "../store.js";
 import { api } from "../api.js";
 import { showToast } from "./toast.js";
 import { copyText } from "../util/clipboard.js";
@@ -6,6 +6,7 @@ import { fixPunctuation } from "../util/punctuation.js";
 
 export function init() {
   const toolbar = document.getElementById("toolbar");
+  const foldCheckbox = document.getElementById("fold-comments-checkbox");
 
   function refresh() {
     const s = getState();
@@ -15,6 +16,17 @@ export function init() {
         btn.disabled = !s.hasFrontmatter;
       } else {
         btn.disabled = !s.loaded;
+      }
+    });
+  }
+
+  if (foldCheckbox) {
+    foldCheckbox.addEventListener("change", () => {
+      setState({ foldComments: foldCheckbox.checked });
+    });
+    subscribe((s) => {
+      if (foldCheckbox.checked !== s.foldComments) {
+        foldCheckbox.checked = s.foldComments;
       }
     });
   }

@@ -12,6 +12,7 @@ const state = {
   diff: { segments: [], charCount: 0, static: false },
   multiSelect: [],
   fontSize: 14,
+  foldComments: false,    // NEW
 };
 
 const subs = new Set();

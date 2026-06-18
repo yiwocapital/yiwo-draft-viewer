@@ -1,5 +1,5 @@
 import { getState, subscribe } from "../store.js";
-import { escapeHtml } from "../util/html.js";
+import { escapeHtml, stripComments } from "../util/html.js";
 
 function renderWithLineNumbers(segments) {
   // Group segments by line (split at \n). Each line becomes a row; each row
@@ -80,21 +80,34 @@ export function init() {
       statusBar.classList.add("hidden");
     }
 
+    // Strip comments if toggle is on
+    let segments = s.diff.segments;
+    let staticContent = s.content;
+    if (s.foldComments) {
+      if (segments) {
+        segments = segments.map((seg) => ({
+          ...seg,
+          text: stripComments(seg.text),
+        })).filter((seg) => seg.text.length > 0);
+      }
+      staticContent = stripComments(s.content);
+    }
+
     // Main content
     if (!s.loaded) {
       view.innerHTML = `<div class="empty-hint">拖一个 .md 文件进来，或菜单 File → Open</div>`;
       return;
     }
     if (s.selected === null) {
-      // Read mode — no diff, no header, plain text
-      view.innerHTML = `<div class="diff">${renderStaticWithLineNumbers(s.content)}</div>`;
+      // Read mode — plain content (comments stripped if toggle on)
+      view.innerHTML = `<div class="diff">${renderStaticWithLineNumbers(staticContent)}</div>`;
       return;
     }
-    if (s.diff.static || !s.diff.segments) {
-      view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderStaticWithLineNumbers(s.content)}</div>`;
+    if (s.diff.static || !segments || segments.length === 0) {
+      view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderStaticWithLineNumbers(staticContent)}</div>`;
       return;
     }
-    view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderWithLineNumbers(s.diff.segments)}</div>`;
+    view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderWithLineNumbers(segments)}</div>`;
     scrollToFirstDiff(view);
   }
 

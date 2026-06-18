@@ -16,3 +16,20 @@
 }
 .toolbar button:hover:not(:disabled) { background: var(--hover); }
 .toolbar button:disabled { color: var(--muted); cursor: not-allowed; }
+
+.toolbar-mode {
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.toolbar-mode label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.toolbar-mode input[type="checkbox"] {
+  cursor: pointer;
+}
