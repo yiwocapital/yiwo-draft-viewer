@@ -6,6 +6,11 @@
 
 ## [未发布]
 
+## [1.3.1] - 2026-06-18
+
+### 修复
+- 窗口标题规则强制执行：`make test-staging` 现在永远只显示 commit id（如 `Yiwo Draft Viewer (77e8d8f)`），不再误显示 tag。修复了 `git tag v1.x.y` 之后 `make test-staging` 因 HEAD 正好在 tag 上导致 `ReleaseVersion` 被错误注入、staging 窗口显示成发布版标题（`Yiwo Draft Viewer v1.x.y`）的问题。Makefile 拆出 `TEST_LDFLAGS`（不含 `ReleaseVersion`）专供 staging 使用，build target 继续用 `LDFLAGS`（含 `ReleaseVersion`），并在 CLAUDE.md 写入执行标准
+
 ## [1.3.0] - 2026-06-18
 
 ### 新增
@@ -85,7 +90,8 @@
 - 原生 macOS 菜单栏
 - 通读模式
 
-[未发布]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.3.0...HEAD
+[未发布]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.0.0...v1.1.0
