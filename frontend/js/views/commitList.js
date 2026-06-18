@@ -63,13 +63,14 @@ async function loadDiff() {
   const s = getState();
   if (!s.selected) return;
 
+  const fc = s.foldComments ? 1 : 0;
   let key;
   let args;
 
   if (s.multiSelect.length === 2) {
     // Locked two-commit comparison
     const [a, b] = s.multiSelect;
-    key = `multi:${a}:${b}`;
+    key = `multi:${a}:${b}:fc=${fc}`;
     args = [a, b];
   } else if (s.multiSelect.length === 1) {
     // Single cmd-selected commit — compare with the latest commit in the list.
@@ -80,7 +81,7 @@ async function loadDiff() {
     const latest = s.commits[0]?.hash;
     if (latest && latest !== selected) {
       // left = older (selected), right = newer (latest) — same convention as 2-item mode
-      key = `vsLatest:${selected}:${latest}`;
+      key = `vsLatest:${selected}:${latest}:fc=${fc}`;
       args = [selected, latest];
     } else {
       // Selected commit is itself the latest (or no latest available) — fall
@@ -89,7 +90,7 @@ async function loadDiff() {
       if (idx < 0) return;
       const cur = s.commits[idx].hash;
       const prev = idx + 1 < s.commits.length ? s.commits[idx + 1].hash : "";
-      key = `single:${prev}:${cur}`;
+      key = `single:${prev}:${cur}:fc=${fc}`;
       args = [prev, cur];
     }
   } else {
@@ -98,7 +99,7 @@ async function loadDiff() {
     if (idx < 0) return;
     const cur = s.commits[idx].hash;
     const prev = idx + 1 < s.commits.length ? s.commits[idx + 1].hash : "";
-    key = `single:${prev}:${cur}`;
+    key = `single:${prev}:${cur}:fc=${fc}`;
     args = [prev, cur];
   }
 
