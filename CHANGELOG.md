@@ -6,6 +6,15 @@
 
 ## [未发布]
 
+## [1.4.0] - 2026-06-20
+
+### 新增
+- **「隐藏对比」开关**：右栏新增独立勾选框，开启后对所有 commit 都直接显示原文（不显示 diff 高亮），关闭时按 diff 模式渲染。和「隐藏注释」独立组合生效：两个开关同时开启 → 原文且无注释；只开「隐藏对比」→ 原文保留注释；只开「隐藏注释」→ 渲染 diff 但剥掉注释；都不开 → 正常 diff + 注释灰色显示
+
+### 调整
+- **「折叠编辑注释」改名为「隐藏注释」**：与新增的「隐藏对比」保持命名一致，且两个开关都做成胶囊样式（圆角、勾选时蓝底白字）并排一行，宽度对齐下方 4 个复制按钮
+- **「通读全文」按钮和 `Esc` 快捷键移除**：原"强制把 selection 清空、显示 working tree 内容"的语义已拆为「隐藏对比」+「隐藏注释」两个全局开关。`Esc` 不再绑定任何操作
+
 ## [1.3.1] - 2026-06-18
 
 ### 修复
@@ -90,7 +99,8 @@
 - 原生 macOS 菜单栏
 - 通读模式
 
-[未发布]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.3.1...HEAD
+[未发布]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.1.0...v1.2.0
