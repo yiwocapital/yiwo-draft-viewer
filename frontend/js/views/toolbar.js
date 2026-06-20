@@ -7,6 +7,7 @@ import { fixPunctuation } from "../util/punctuation.js";
 export function init() {
   const toolbar = document.getElementById("toolbar");
   const foldCheckbox = document.getElementById("fold-comments-checkbox");
+  const hideDiffCheckbox = document.getElementById("hide-diff-checkbox");
 
   function refresh() {
     const s = getState();
@@ -31,6 +32,19 @@ export function init() {
     subscribe((s) => {
       if (foldCheckbox.checked !== s.foldComments) {
         foldCheckbox.checked = s.foldComments;
+      }
+    });
+  }
+
+  if (hideDiffCheckbox) {
+    hideDiffCheckbox.addEventListener("change", () => {
+      setState({ hideDiff: hideDiffCheckbox.checked });
+      // Re-fetch so backend returns static+content (or diff segments)
+      if (window.__loadDiff) window.__loadDiff();
+    });
+    subscribe((s) => {
+      if (hideDiffCheckbox.checked !== s.hideDiff) {
+        hideDiffCheckbox.checked = s.hideDiff;
       }
     });
   }

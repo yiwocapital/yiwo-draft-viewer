@@ -13,13 +13,6 @@ function applyFontSize(size) {
 export function initShortcuts() {
   document.addEventListener("keydown", async (e) => {
     const s = getState();
-    if (e.key === "Escape") {
-      if (getState().selected !== null) {
-        e.preventDefault();
-        setState({ selected: null, multiSelect: [] });
-      }
-      return;
-    }
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       if (s.commits.length === 0) return;
       e.preventDefault();

@@ -18,18 +18,56 @@
 .toolbar button:disabled { color: var(--muted); cursor: not-allowed; }
 
 .toolbar-mode {
-  padding: 8px 12px;
+  /* Match .toolbar below: 2-column grid, same gap + padding so each pill
+     aligns with one of the four copy buttons. */
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  padding: 10px;
   border-top: 1px solid var(--border);
   background: var(--bg);
 }
-.toolbar-mode label {
+.toggle-pill {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  justify-content: center;
+  padding: 12px 8px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--fg);
   cursor: pointer;
   user-select: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
-.toolbar-mode input[type="checkbox"] {
-  cursor: pointer;
+.toggle-pill input[type="checkbox"] {
+  /* Hide the native checkbox — the label IS the switch. Keep it in the DOM
+     so the existing JS change/subscribe handlers and keyboard a11y still work. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.toggle-pill:hover {
+  background: var(--hover);
+}
+.toggle-pill:has(input:checked) {
+  background: #0969da;
+  border-color: #0969da;
+  color: #fff;
+}
+.toggle-pill:has(input:checked):hover {
+  background: #0860c7;
+  border-color: #0860c7;
+}
+.toggle-pill:focus-within {
+  /* Keyboard focus ring — only shown when navigating with Tab. */
+  outline: 2px solid #0969da;
+  outline-offset: 2px;
+}
+.toggle-pill-text {
+  pointer-events: none; /* clicks land on the label, not the inner span */
 }

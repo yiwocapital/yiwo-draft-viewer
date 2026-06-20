@@ -112,35 +112,47 @@ export function init() {
       view.innerHTML = `<div class="empty-hint">拖一个 .md 文件进来，或菜单 File → Open</div>`;
       return;
     }
+
+    // Two independent checkboxes determine what to render:
+    //   hideDiff    — render selected commit's plain text instead of diff segments
+    //   foldComments — strip <!-- --> from whatever we render
+    // Four combinations, mapped below. The "selected commit's plain text" comes
+    // from `s.diff.content` (populated by GetDiff when hideDiff=true); the
+    // fallback (selected===null OR static+empty segments) uses `s.content` —
+    // the working tree — since there's no specific commit to render.
+    let body;
+    const banner = multiSelectBanner(s);
+
     if (s.selected === null) {
-      // Read mode — plain content. Backend stripped comments if foldComments is on,
-      // but s.content was loaded via OpenFile before the toggle. Strip here too.
+      // No commit selected (file with no git history, or never opened): render
+      // working tree content as plain text. Backend didn't strip — do it here.
       const content = s.foldComments ? stripComments(s.content) : s.content;
-      view.innerHTML = `<div class="diff">${renderStaticWithLineNumbers(content)}</div>`;
-      view.scrollTop = prevScrollTop;
-      return;
+      body = renderStaticWithLineNumbers(content);
+    } else if (s.hideDiff) {
+      // "隐藏对比" on: show the selected commit's content (already stripped by
+      // backend when foldComments was on at GetDiff time).
+      const content = s.diff.content || "";
+      body = renderStaticWithLineNumbers(content);
+    } else if (s.diff.static || !s.diff.segments || s.diff.segments.length === 0) {
+      // Empty diff fallback (e.g. the selected commit's blob is empty). Mirror
+      // the no-commit-selected path: render working tree content stripped locally.
+      const content = s.foldComments ? stripComments(s.content) : s.content;
+      body = renderStaticWithLineNumbers(content);
+    } else {
+      // Normal diff mode — segments were already stripped by Go (because
+      // foldComments is set on the backend before GetDiff was called).
+      body = renderWithLineNumbers(s.diff.segments);
     }
 
-    const segments = s.diff.segments;
-
-    if (s.diff.static || !segments || segments.length === 0) {
-      // For static fallback (rare), strip locally to honor toggle
-      const content = s.foldComments ? stripComments(s.content) : s.content;
-      view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderStaticWithLineNumbers(content)}</div>`;
-      view.scrollTop = prevScrollTop;
-      return;
-    }
-
-    // Normal diff mode — segments were already stripped by Go (because the toggle
-    // is set on the backend before GetDiff was called). No client-side strip needed.
-    view.innerHTML = `${multiSelectBanner(s)}<div class="diff">${renderWithLineNumbers(segments)}</div>`;
+    view.innerHTML = `${banner}<div class="diff">${body}</div>`;
+    view.scrollTop = prevScrollTop;
 
     // Only auto-scroll to first diff on the initial render. If the user
     // had already scrolled (prevScrollTop > 0), preserve their position.
-    if (prevScrollTop === 0) {
+    // Skip auto-scroll in static / hideDiff paths — there's no "first diff".
+    if (prevScrollTop === 0 && !s.hideDiff && s.selected !== null &&
+        !(s.diff.static || !s.diff.segments || s.diff.segments.length === 0)) {
       scrollToFirstDiff(view);
-    } else {
-      view.scrollTop = prevScrollTop;
     }
   }
 

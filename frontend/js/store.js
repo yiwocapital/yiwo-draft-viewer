@@ -12,7 +12,8 @@ const state = {
   diff: { segments: [], charCount: 0, static: false },
   multiSelect: [],
   fontSize: 14,
-  foldComments: false,    // NEW
+  foldComments: false,    // "隐藏编辑注释" — strip <!-- --> from diff/static renders
+  hideDiff: false,        // "隐藏对比" — render selected commit as plain text, no diff
 };
 
 const subs = new Set();

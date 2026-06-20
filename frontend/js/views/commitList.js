@@ -64,13 +64,14 @@ async function loadDiff() {
   if (!s.selected) return;
 
   const fc = s.foldComments ? 1 : 0;
+  const hd = s.hideDiff ? 1 : 0;
   let key;
   let args;
 
   if (s.multiSelect.length === 2) {
     // Locked two-commit comparison
     const [a, b] = s.multiSelect;
-    key = `multi:${a}:${b}:fc=${fc}`;
+    key = `multi:${a}:${b}:fc=${fc}:hd=${hd}`;
     args = [a, b];
   } else if (s.multiSelect.length === 1) {
     // Single cmd-selected commit — compare with the latest commit in the list.
@@ -81,7 +82,7 @@ async function loadDiff() {
     const latest = s.commits[0]?.hash;
     if (latest && latest !== selected) {
       // left = older (selected), right = newer (latest) — same convention as 2-item mode
-      key = `vsLatest:${selected}:${latest}:fc=${fc}`;
+      key = `vsLatest:${selected}:${latest}:fc=${fc}:hd=${hd}`;
       args = [selected, latest];
     } else {
       // Selected commit is itself the latest (or no latest available) — fall
@@ -90,7 +91,7 @@ async function loadDiff() {
       if (idx < 0) return;
       const cur = s.commits[idx].hash;
       const prev = idx + 1 < s.commits.length ? s.commits[idx + 1].hash : "";
-      key = `single:${prev}:${cur}:fc=${fc}`;
+      key = `single:${prev}:${cur}:fc=${fc}:hd=${hd}`;
       args = [prev, cur];
     }
   } else {
@@ -99,20 +100,19 @@ async function loadDiff() {
     if (idx < 0) return;
     const cur = s.commits[idx].hash;
     const prev = idx + 1 < s.commits.length ? s.commits[idx + 1].hash : "";
-    key = `single:${prev}:${cur}:fc=${fc}`;
+    key = `single:${prev}:${cur}:fc=${fc}:hd=${hd}`;
     args = [prev, cur];
   }
 
   if (key === lastLoadKey) return;
   lastLoadKey = key;
 
-  const res = await api.getDiff(args[0], args[1]);
+  const res = await api.getDiff(args[0], args[1], s.hideDiff);
   if (res.ok) setState({ diff: res.data, charCount: res.data.charCount });
 }
 
 export function init() {
   const list = document.getElementById("commit-list");
-  const readMode = document.getElementById("read-mode");
 
   function refresh() {
     const s = getState();
@@ -123,16 +123,7 @@ export function init() {
       empty.textContent = "未启用版本控制";
       list.appendChild(empty);
       renderDetail(s);
-      if (readMode) readMode.classList.remove("active");
       return;
-    }
-    // Read-mode active state
-    if (readMode) {
-      if (s.selected === null) {
-        readMode.classList.add("active");
-      } else {
-        readMode.classList.remove("active");
-      }
     }
     s.commits.forEach((c) => {
       const isSel = s.selected === c.hash;
@@ -175,13 +166,6 @@ export function init() {
     if (s.selected === c.hash) return;
     setState({ selected: c.hash, multiSelect: [] });
   });
-
-  if (readMode) {
-    readMode.addEventListener("click", () => {
-      setState({ selected: null, multiSelect: [] });
-      lastLoadKey = null;
-    });
-  }
 
   subscribe(refresh);
   subscribe(loadDiff);

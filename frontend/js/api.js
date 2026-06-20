@@ -12,7 +12,7 @@ function call(method, ...args) {
 export const api = {
   openFile: (path) => call("OpenFile", path),
   listCommits: () => call("ListCommits"),
-  getDiff: (left, right) => call("GetDiff", left, right),
+  getDiff: (left, right, hideDiff) => call("GetDiff", left, right, hideDiff),
   copySection: (kind) => call("CopySection", kind),
   reload: () => call("Reload"),
   setFontSize: (size) => call("SetFontSize", size),

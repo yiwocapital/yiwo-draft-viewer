@@ -149,16 +149,30 @@ func (s *Service) ListCommits() model.Result {
 	return model.Result{Ok: true, Data: map[string]interface{}{"items": items}}
 }
 
-func (s *Service) GetDiff(left, right string) model.Result {
+func (s *Service) GetDiff(left, right string, hideDiff bool) model.Result {
 	rel, _ := filepath.Rel(s.repo.WorkTreePath(), s.currentPath)
 	leftContent := s.resolveContent(left, rel)
 	rightContent := s.resolveContent(right, rel)
 
 	// Strip comments when toggle is on. This must happen BEFORE diff.Compute
-	// so that no diff segment ever contains a comment fragment.
+	// (and before any plain-content return below) so no comment fragment ever
+	// leaks into the response.
 	if s.foldComments {
 		leftContent = file.StripComments(leftContent)
 		rightContent = file.StripComments(rightContent)
+	}
+
+	if hideDiff {
+		// Frontend's "隐藏对比" checkbox: skip diff.Compute entirely and hand
+		// back the right-side blob as a static plain-text payload. The
+		// `content` field is what mainView renders in this mode; `segments`
+		// is empty and `static` is true so legacy code paths stay harmless.
+		return model.Result{Ok: true, Data: map[string]interface{}{
+			"segments":  []interface{}{},
+			"charCount": file.CountChars(rightContent),
+			"static":    true,
+			"content":   rightContent,
+		}}
 	}
 
 	if rightContent == "" {
