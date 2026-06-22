@@ -4,7 +4,7 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
-## [未发布]
+## [1.5.0] - 2026-06-23
 
 ### 新增
 - **关键词搜索**：主视图按 `Cmd+F` 打开搜索栏，输入关键词即时高亮所有匹配、自动定位到当前匹配；`Cmd+G` / `Shift+Cmd+G` 在匹配间跳转；输入框内 `Enter` / `Shift+Enter` 也能跳转；`Esc` 关闭搜索
@@ -103,7 +103,7 @@
 - 原生 macOS 菜单栏
 - 通读模式
 
-[未发布]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.4.0...HEAD
+[1.5.0]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.2.0...v1.3.0

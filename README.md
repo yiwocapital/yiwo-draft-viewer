@@ -87,11 +87,11 @@ internal/
   app/service.go                 Wails service + fsnotify + 后端 diff 编排
 frontend/
   index.html
-  css/                           theme / layout / diff / list / wordcount / toolbar / toast
+  css/                           theme / layout / diff / list / wordcount / toolbar / toast / search
   js/
     main.js, store.js, api.js
-    views/  × 5                  mainView / commitList / wordcount / toolbar / toast
-    util/  × 3                   clipboard / html / shortcuts
+    views/  × 7                  mainView / commitList / wordcount / toolbar / toast / fontSize / search
+    util/  × 5                   clipboard / html / punctuation / shortcuts / highlight
 docs/superpowers/
   specs/                         设计规范
   plans/                         实施计划
