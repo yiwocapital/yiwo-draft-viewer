@@ -1,5 +1,6 @@
 import { getState, subscribe } from "../store.js";
 import { escapeHtml, stripComments } from "../util/html.js";
+import { applyTerm } from "../util/highlight.js";
 
 function renderWithLineNumbers(segments) {
   // Group segments by line (split at \n). Each line becomes a row; each row
@@ -146,6 +147,12 @@ export function init() {
 
     view.innerHTML = `${banner}<div class="diff">${body}</div>`;
     view.scrollTop = prevScrollTop;
+
+    // Apply search highlights on top of the freshly-rendered diff/static
+    // content. applyTerm operates on .diff-content blocks (which both
+    // renderWithLineNumbers and renderStaticWithLineNumbers produce). For
+    // empty term it just clears any prior highlights and returns count=0.
+    applyTerm(view, s.search.term, s.search.currentIndex);
 
     // Only auto-scroll to first diff on the initial render. If the user
     // had already scrolled (prevScrollTop > 0), preserve their position.

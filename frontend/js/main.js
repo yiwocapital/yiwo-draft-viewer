@@ -6,6 +6,7 @@ import { init as initList } from "./views/commitList.js";
 import { init as initWc } from "./views/wordcount.js";
 import { init as initTb } from "./views/toolbar.js";
 import { init as initFs } from "./views/fontSize.js";
+import { init as initSearch } from "./views/search.js";
 import { initShortcuts } from "./util/shortcuts.js";
 
 initMain();
@@ -13,6 +14,7 @@ initList();
 initWc();
 initTb();
 initFs();
+initSearch();
 initShortcuts();
 
 // Drag-and-drop is handled by Wails via OnFileDrop in main.go.
@@ -78,6 +80,7 @@ if (window.runtime && window.runtime.EventsOn) {
       title: "", summary: "", content: "", charCount: 0,
       commits: [], selected: null, multiSelect: [],
       diff: { segments: [], charCount: 0, static: false },
+      search: { open: false, term: "", currentIndex: 0 },
     });
   });
 }

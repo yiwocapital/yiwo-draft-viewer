@@ -10,9 +10,17 @@
   <link rel="stylesheet" href="/css/wordcount.css">
   <link rel="stylesheet" href="/css/toolbar.css">
   <link rel="stylesheet" href="/css/toast.css">
+  <link rel="stylesheet" href="/css/search.css">
 </head>
 <body>
   <div id="app" class="empty">
+    <div id="search-bar" class="search-bar hidden">
+      <input id="search-input" type="text" placeholder="搜索..." spellcheck="false" autocomplete="off">
+      <span id="search-counter" class="search-counter zero">0 / 0</span>
+      <button id="search-prev" class="search-nav" disabled title="上一个 (Shift+Cmd+G)">↑</button>
+      <button id="search-next" class="search-nav" disabled title="下一个 (Cmd+G)">↓</button>
+      <button id="search-close" class="search-close" title="关闭 (Esc)">✕</button>
+    </div>
     <main id="main-view" class="main-view">
       <div class="empty-hint">拖一个 .md 文件进来，或菜单 File → Open</div>
     </main>

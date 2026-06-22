@@ -46,6 +46,30 @@ export function initShortcuts() {
       applyFontSize(next);
       api.setFontSize(next);
       setState({ fontSize: next });
+    } else if ((e.metaKey || e.ctrlKey) && e.key === "f") {
+      // Cmd+F: open search bar (or focus input if already open).
+      // The input field handles Enter / Shift+Enter / Esc on its own.
+      e.preventDefault();
+      if (window.__search) window.__search.open();
+    } else if ((e.metaKey || e.ctrlKey) && e.key === "g" && !e.shiftKey) {
+      // Cmd+G: next match. Only meaningful when search is open with a term.
+      if (window.__search && s.search.open && s.search.term) {
+        e.preventDefault();
+        window.__search.next();
+      }
+    } else if ((e.metaKey || e.ctrlKey) && e.key === "g" && e.shiftKey) {
+      // Shift+Cmd+G: previous match.
+      if (window.__search && s.search.open && s.search.term) {
+        e.preventDefault();
+        window.__search.prev();
+      }
+    } else if (e.key === "Escape" && !e.metaKey && !e.ctrlKey) {
+      // Esc: close search if open. Plain Esc only — modifier-combos are
+      // typically consumed by the OS / menu bar.
+      if (window.__search && s.search.open) {
+        e.preventDefault();
+        window.__search.close();
+      }
     }
   });
 }
