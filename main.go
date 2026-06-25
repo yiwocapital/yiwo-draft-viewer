@@ -12,6 +12,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/menu/keys"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -102,6 +103,23 @@ func main() {
 		Width:  1280,
 		Height: 800,
 		Menu:   AppMenu,
+		Mac: &mac.Options{
+			// macOS Big Sur+ renders a second copy of the window title in the
+			// toolbar area under the title bar when TitlebarAppearsTransparent
+			// is false (the default) and no NSToolbar is configured — visible
+			// as a white bar with the title text repeated just below the system
+			// title bar. Setting TitlebarAppearsTransparent=true keeps the
+			// system title bar text but drops the redundant in-webview copy.
+			// Verified on macOS 14.6.1 with Wails v2.12.0.
+			TitleBar: &mac.TitleBar{
+				TitlebarAppearsTransparent: true,
+				HideTitle:                  false,
+				HideTitleBar:               false,
+				FullSizeContent:            false,
+				UseToolbar:                 false,
+				HideToolbarSeparator:       true,
+			},
+		},
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
