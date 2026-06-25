@@ -4,6 +4,15 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [1.6.0] - 2026-06-25
+
+### 新增
+- **in-app 编辑模式**：工具栏新增「编辑」按钮（`Cmd+E` 切换），主区从预览切到 textarea，`Cmd+S` 原子写盘覆盖原文件；编辑期间 fsnotify 暂停避免重载抢焦点；外部修改时弹冲突对话框（覆盖 / 重新读入 / 取消，**不允许静默覆盖**）；App 退出时若 dirty 弹原生保存对话框（Save / Discard / Cancel）
+
+### 修复
+- **macOS Big Sur+ 重复显示窗口标题**：chrome 标题栏下方原本会再画一份「Yiwo Draft Viewer (commit)」（macOS 原生行为），现在通过 `TitlebarAppearsTransparent: true` + CSS 灰条覆盖层去掉重复，让标题栏保持单一灰色背景，主区内容滚动时不漏文字
+- **编辑模式 dirty 状态丢失**：修复 textarea 每次 keystroke 被重建导致 input handler 失效的 bug（改为 mainView 仅在首次进入编辑时挂载一次）；关闭文稿时正确重置 `editMode` / `dirty` 字段
+
 ## [1.5.0] - 2026-06-23
 
 ### 新增
@@ -103,6 +112,7 @@
 - 原生 macOS 菜单栏
 - 通读模式
 
+[1.6.0]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/yiwocapital/yiwo-draft-viewer/compare/v1.3.0...v1.3.1

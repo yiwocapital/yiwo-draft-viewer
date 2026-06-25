@@ -124,6 +124,13 @@ frontend/
 - **菜单 Quit 注册**：必须 `AppMenu.Append(menu.AppMenu())`，否则 Cmd+Q 触发 macOS 错误音。
 - **窗口大小位置持久化**：`internal/app/service.go` 的 `Startup` 用 `~/Library/Application Support/YiwoDraftViewer/`，不要用 `"."`（启动目录不稳定）。前端 resize + mouseup 事件触发 `WindowChanged()`；`OnBeforeClose` 兜底。
 - **配置文件位置**：`~/Library/Application Support/YiwoDraftViewer/setting.local.yaml`，不要写项目根。
+- **编辑模式 Save 必须原子写**：`Service.saveInternal` 用 tmp file + rename（`<path>.yiwo-tmp` → `os.Rename`），不能直接 `os.WriteFile` 覆盖原文件。断电 / 写失败时 tmp 文件用 `os.Remove` 兜底清理。
+- **编辑模式下 watcherPaused 必须始终 true**：进入 `BeginEdit` 后整个编辑期间（含 Save 期间和 Save 后）保持 true，否则 Save 触发的 fsnotify 事件会走 `OpenFile` 路径重载，把用户正在编辑的 textarea 内容清空。
+- **外部修改冲突绝不允许静默覆盖**：Save 时若磁盘 `sha256` 与 `editStartHash` 不匹配，必须返回 `Code: "EXTERNAL_MODIFIED"` 错误码，前端捕获后强制弹三选项 dialog（覆盖 / 重新读入 / 取消）。即使走 `SaveOverwrite` 覆盖分支也要 toast「已覆盖外部修改」明示用户。
+- **dirty 必须前后端双轨同步**：`OnBeforeClose` 是纯后端 hook，没法异步问前端 dirty。后端 `Service.dirty` 字段由前端 `api.setDirty(bool)` RPC 在 textarea 首次 input 时和 Save 成功后同步更新。Save 成功时后端自重置 dirty=false，无需前端二次调用。
+- **WKWebView 不弹同步 JS confirm**：在 Wails v2.12.0 + macOS WKWebView 中 `confirm()` / `alert()` 不会显示。所有用户必须看到的弹窗用自定义 HTML modal（main.js 的 `showModal()` helper）；`runtime.MessageDialog` 从 OnBeforeClose goroutine 调用也会静默失败，dirty-quit / close-file 流程全部走前端事件 + HTML modal。
+- **mainView 编辑模式只挂载一次**：`refresh()` 在 editMode 下若 textarea 已存在则直接 return，否则 `view.innerHTML = mod.render()` 重建。每 keystroke 都重建会丢失 focus 和光标位置（macOS 嘟嘟声即 focus 丢失信号）。
+- **macOS Big Sur+ 标题栏重复**：Wails 默认 `TitlebarAppearsTransparent: false` 时 macOS 会在 toolbar area 重复画一次窗口标题。修复方案：`Mac.TitleBar.TitlebarAppearsTransparent = true` + CSS `body::before` 固定 28px 灰条覆盖层（z-index: 1，pointer-events: none），保证 chrome 区域单一灰色且主区滚动时不漏文字。
 
 ## 窗口标题版本号规则（强制执行标准）
 
