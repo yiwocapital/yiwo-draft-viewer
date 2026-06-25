@@ -91,7 +91,14 @@ if (window.runtime && window.runtime.EventsOn) {
     }
   });
   window.runtime.EventsOn("close-file", () => {
-    // Reset to empty state
+    // If dirty, confirm before discarding (mirrors Cmd+Q dirty-quit UX).
+    if (getState().dirty) {
+      const ok = confirm("当前编辑有未保存修改，确定关闭？\n（修改将被丢弃）");
+      if (!ok) return;
+      // Tell backend to reset its dirty mirror (in case SaveAndClose isn't used)
+      api.setDirty(false).catch(() => {});
+    }
+    // Reset to empty state (explicitly clear editMode + dirty for Issue #4)
     document.getElementById("app").classList.add("empty");
     setState({
       loaded: false, path: "", hasGit: false, hasFrontmatter: false,
@@ -99,6 +106,8 @@ if (window.runtime && window.runtime.EventsOn) {
       commits: [], selected: null, multiSelect: [],
       diff: { segments: [], charCount: 0, static: false },
       search: { open: false, term: "", currentIndex: 0 },
+      editMode: false,
+      dirty: false,
     });
   });
 }

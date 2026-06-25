@@ -92,6 +92,14 @@ function scrollToFirstDiff(view) {
 export function init() {
   const view = document.getElementById("main-view");
 
+  // Edit-mode rendering: only mount the textarea once on first entry.
+  // Subsequent state changes (typing, dirty toggles, search-bar updates)
+  // flow through this same refresh(), but rebuilding innerHTML each time
+  // would destroy the textarea mid-keystroke, lose focus, and reset value.
+  // Content flows from the input handler via setState; the status bar
+  // update above still runs on every refresh.
+  let editModeRendered = false;
+
   function refresh() {
     const s = getState();
     const statusBar = document.getElementById("status-bar");
@@ -104,15 +112,20 @@ export function init() {
       statusBar.classList.add("hidden");
     }
 
-    // Edit mode branch: delegate to editor view, then attach listeners.
-    // Dynamic import keeps editor.js out of the initial bundle for users who
-    // never enter edit mode.
+    // Edit mode branch: render textarea only on first entry. Subsequent state
+    // changes (typing, dirty toggles) should NOT re-render — would destroy
+    // user input and focus. Content flows from input handler via setState.
     if (s.editMode) {
-      import("./editor.js").then((mod) => {
-        view.innerHTML = mod.render();
-        mod.attachEventListeners();
-      });
+      if (!editModeRendered) {
+        editModeRendered = true;
+        import("./editor.js").then((mod) => {
+          view.innerHTML = mod.render();
+          mod.attachEventListeners();
+        });
+      }
       return;
+    } else {
+      editModeRendered = false;
     }
 
     // Capture scroll position BEFORE innerHTML rewrite (innerHTML reset

@@ -17,6 +17,23 @@
 .toolbar button:hover:not(:disabled) { background: var(--hover); }
 .toolbar button:disabled { color: var(--muted); cursor: not-allowed; }
 
+.edit-toggle-row {
+  display: flex;
+  padding: 10px;
+  padding-bottom: 0;
+  background: var(--bg);
+}
+.edit-toggle-row button {
+  flex: 1;
+  padding: 12px 8px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  cursor: pointer;
+}
+.edit-toggle-row button:hover { background: var(--hover); }
+
 .toolbar-mode {
   /* Match .toolbar below: 2-column grid, same gap + padding so each pill
      aligns with one of the four copy buttons. */
