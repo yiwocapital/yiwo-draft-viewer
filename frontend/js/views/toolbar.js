@@ -49,9 +49,33 @@ export function init() {
     });
   }
 
+  const editBtn = document.getElementById("edit-toggle-btn");
+  if (editBtn) {
+    editBtn.addEventListener("click", async () => {
+      const s = getState();
+      if (s.editMode) {
+        window.dispatchEvent(new CustomEvent("yiwo-exit-edit"));
+      } else {
+        window.dispatchEvent(new CustomEvent("yiwo-enter-edit"));
+      }
+    });
+
+    subscribe((s) => {
+      if (s.editMode) {
+        editBtn.textContent = s.dirty ? "● 编辑" : "✓ 编辑";
+        editBtn.classList.add("active");
+      } else {
+        editBtn.textContent = "编辑";
+        editBtn.classList.remove("active");
+      }
+      editBtn.disabled = !s.loaded;
+    });
+  }
+
   toolbar.addEventListener("click", async (e) => {
     const btn = e.target.closest("button");
     if (!btn || btn.disabled) return;
+    if (!btn.dataset.section) return;
     const res = await api.copySection(btn.dataset.section);
     if (res.ok) {
       const fixed = fixPunctuation(res.data.text);
