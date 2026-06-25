@@ -8,6 +8,54 @@ import { init as initTb } from "./views/toolbar.js";
 import { init as initFs } from "./views/fontSize.js";
 import { init as initSearch } from "./views/search.js";
 import { initShortcuts } from "./util/shortcuts.js";
+import { escapeHtml } from "./util/html.js";
+
+// showModal: HTML-based dialog used in place of window.confirm(). Native JS
+// confirm() is unreliable inside WKWebView when triggered from async event
+// handlers without direct user interaction (e.g., Wails runtime events on
+// menu/menu-shortcut paths). An HTML modal always renders.
+function showModal({ title, message, buttons }) {
+  // buttons: [{label, kind: 'primary'|'danger'|'default', value}]
+  return new Promise((resolve) => {
+    const container = document.getElementById("modal-container");
+    if (!container) { resolve(null); return; }
+
+    container.innerHTML = `
+      <div class="modal-card">
+        <h3>${escapeHtml(title)}</h3>
+        <p>${escapeHtml(message)}</p>
+        <div class="modal-buttons">
+          ${buttons.map((b, i) => `
+            <button data-idx="${i}" class="${b.kind || "default"}">${escapeHtml(b.label)}</button>
+          `).join("")}
+        </div>
+      </div>
+    `;
+    container.classList.remove("hidden");
+
+    function close(value) {
+      container.classList.add("hidden");
+      container.innerHTML = "";
+      document.removeEventListener("keydown", onKey);
+      resolve(value);
+    }
+
+    function onKey(e) {
+      if (e.key === "Escape") {
+        close(buttons[buttons.length - 1].value);
+      }
+    }
+
+    container.querySelectorAll("button[data-idx]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const idx = parseInt(btn.dataset.idx, 10);
+        close(buttons[idx].value);
+      });
+    });
+
+    document.addEventListener("keydown", onKey);
+  });
+}
 
 initMain();
 initList();
@@ -85,17 +133,16 @@ if (window.runtime && window.runtime.EventsOn) {
       return;
     }
 
-    // 3-option dialog using sequential confirm() calls (same pattern as
-    // yiwo-conflict-detected). Native JS confirm() works reliably on macOS
-    // webview; Wails MessageDialog from OnBeforeClose goroutine does not.
-    const choice = await new Promise((resolve) => {
-      // Step 1: 保存 or 取消 (to see next option)?
-      const save = confirm("当前编辑有未保存修改。\n\n点击「确定」保存后退出。\n点击「取消」查看下一步选项。");
-      if (save) { resolve("save"); return; }
-      // Step 2: 丢弃 or 取消 (cancel and stay in app)?
-      const discard = confirm("点击「确定」放弃修改并退出。\n点击「取消」留在 app。");
-      if (discard) { resolve("discard"); return; }
-      resolve("cancel");
+    // 3-option modal: native JS confirm() is unreliable inside WKWebView when
+    // triggered from async Wails event handlers, so we use an HTML modal.
+    const choice = await showModal({
+      title: "未保存的修改",
+      message: "当前编辑有未保存修改，是否保存？",
+      buttons: [
+        { label: "取消", kind: "default", value: "cancel" },
+        { label: "丢弃", kind: "danger", value: "discard" },
+        { label: "保存", kind: "primary", value: "save" },
+      ],
     });
 
     if (choice === "save") {
@@ -116,8 +163,15 @@ if (window.runtime && window.runtime.EventsOn) {
   });
   window.runtime.EventsOn("close-file", async () => {
     if (getState().dirty) {
-      const ok = confirm("当前编辑有未保存修改，确定关闭？\n（修改将被丢弃）");
-      if (!ok) return;
+      const choice = await showModal({
+        title: "关闭文档",
+        message: "当前编辑有未保存修改，关闭后将丢失。\n\n点击「丢弃并关闭」放弃修改。\n点击「取消」留在 app。",
+        buttons: [
+          { label: "取消", kind: "default", value: "cancel" },
+          { label: "丢弃并关闭", kind: "danger", value: "discard" },
+        ],
+      });
+      if (choice !== "discard") return;
     }
     // Tell backend to clear state (this was previously done by the Go
     // menu callback; now it's frontend-driven so the dirty prompt can
@@ -209,8 +263,15 @@ window.addEventListener("yiwo-exit-edit", async () => {
   const s = getState();
   if (!s.editMode) return;
   if (s.dirty) {
-    const ok = confirm("当前编辑有未保存修改，确定丢弃？");
-    if (!ok) return;
+    const choice = await showModal({
+      title: "未保存的修改",
+      message: "当前编辑有未保存修改。\n点击「丢弃」放弃修改。\n点击「取消」留在编辑模式。",
+      buttons: [
+        { label: "取消", kind: "default", value: "cancel" },
+        { label: "丢弃", kind: "danger", value: "discard" },
+      ],
+    });
+    if (choice !== "discard") return;
   }
   // Tell the backend we're done (resumes fsnotify watcher); ignore result
   // since user is leaving edit mode regardless.
