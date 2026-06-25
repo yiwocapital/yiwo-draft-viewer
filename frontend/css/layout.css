@@ -55,3 +55,18 @@
   color: var(--fg);
 }
 .status-bar.hidden { display: none !important; }
+
+.editor-textarea {
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 1em 2em;
+  box-sizing: border-box;
+  background: var(--bg, #fff);
+  color: var(--fg, #222);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  line-height: 1.6;
+  tab-size: 4;
+}
