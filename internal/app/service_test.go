@@ -328,3 +328,21 @@ func TestSetDirty(t *testing.T) {
 		t.Error("expected dirty=false")
 	}
 }
+
+func TestIsDirty_MirrorsSetDirty(t *testing.T) {
+	// IsDirty is the public getter that OnBeforeClose uses to decide
+	// whether to show the unsaved-changes dialog. Must stay in sync with
+	// the SetDirty setter.
+	s := NewService()
+	if s.IsDirty() {
+		t.Error("new Service should start with dirty=false")
+	}
+	s.SetDirty(true)
+	if !s.IsDirty() {
+		t.Error("IsDirty() should reflect SetDirty(true)")
+	}
+	s.SetDirty(false)
+	if s.IsDirty() {
+		t.Error("IsDirty() should reflect SetDirty(false)")
+	}
+}

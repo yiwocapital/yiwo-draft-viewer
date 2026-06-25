@@ -521,6 +521,13 @@ func (s *Service) SetDirty(b bool) {
 	s.dirty = b
 }
 
+// IsDirty reports whether the backend mirror of the dirty flag is set.
+// Used by OnBeforeClose (main.go) to decide whether to show the unsaved-
+// changes dialog before allowing the app to quit.
+func (s *Service) IsDirty() bool {
+	return s.dirty
+}
+
 // Save writes content to s.currentPath via atomic tmp+rename. If the file on
 // disk has been modified since editing began (sha256 mismatch with
 // editStartHash), returns Code="EXTERNAL_MODIFIED" without writing. Frontend

@@ -27,8 +27,35 @@ var (
 	ReleaseVersion = ""
 )
 
+// appWrapper exposes a small surface of cross-cutting operations that need a
+// runtime context (Quit, EventsEmit) but don't belong on the persisted Service
+// API. The frontend calls SaveAndClose from the Cmd+Q → "保存" handler in the
+// dirty-quit flow: it saves the buffer, then quits if Save succeeded.
+type appWrapper struct {
+	ctx context.Context
+	svc *app.Service
+}
+
+func (a *appWrapper) startup(ctx context.Context) {
+	a.ctx = ctx
+}
+
+// SaveAndClose writes content via Service.Save. On success, calls runtime.Quit
+// so the app exits after the dirty-quit dialog's "保存" branch. On failure,
+// frontend already shows an error toast; app stays open for retry.
+func (a *appWrapper) SaveAndClose(content string) {
+	if a.svc == nil {
+		return
+	}
+	res := a.svc.Save(content)
+	if res.Ok && a.ctx != nil {
+		runtime.Quit(a.ctx)
+	}
+}
+
 func main() {
 	svc := app.NewService()
+	wrapper := &appWrapper{svc: svc}
 
 	AppMenu := menu.NewMenu()
 
@@ -68,6 +95,7 @@ func main() {
 		},
 		OnStartup: func(ctx context.Context) {
 			svc.Startup(ctx)
+			wrapper.startup(ctx)
 			// Restore window size + position if saved values are non-zero.
 			// Skip position restoration if zero (first launch), let macOS center it.
 			cfg, _ := config.Load(svc.ConfigDir())
@@ -88,7 +116,43 @@ func main() {
 			// the very last position/size is persisted even if no resize or
 			// mouseup fired between the user's last action and the close.
 			svc.WindowChanged()
-			return false
+
+			// Dirty-quit intercept: if there's an unsaved edit, ask the user
+			// what to do before allowing close. DefaultButton="保存" matches
+			// macOS HIG (destructive actions require explicit choice).
+			if !svc.IsDirty() {
+				return false
+			}
+
+			selection, err := runtime.MessageDialog(ctx, runtime.MessageDialogOptions{
+				Type:          runtime.QuestionDialog,
+				Title:         "未保存的修改",
+				Message:       "当前编辑有未保存的修改，是否保存？",
+				Buttons:       []string{"保存", "丢弃", "取消"},
+				DefaultButton: "保存",
+				CancelButton:  "取消",
+			})
+			if err != nil {
+				// Dialog failed (rare). Stay open so user can retry.
+				return true
+			}
+
+			switch selection {
+			case "保存":
+				// Ask frontend to save current buffer and then close. The
+				// frontend calls App.SaveAndClose on success, which calls
+				// runtime.Quit. If save fails, frontend shows error toast
+				// and the app stays open.
+				runtime.EventsEmit(ctx, "request-save-before-close", nil)
+				return true
+			case "丢弃":
+				// Drop changes and quit immediately.
+				svc.SetDirty(false)
+				runtime.Quit(ctx)
+				return false
+			default: // "取消" or empty
+				return true
+			}
 		},
 		DragAndDrop: &options.DragAndDrop{
 			EnableFileDrop:     true,
@@ -98,6 +162,7 @@ func main() {
 		},
 		Bind: []interface{}{
 			svc,
+			wrapper,
 		},
 	})
 	if err != nil {
