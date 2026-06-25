@@ -63,9 +63,34 @@ export function initShortcuts() {
         e.preventDefault();
         window.__search.prev();
       }
+    } else if ((e.metaKey || e.ctrlKey) && e.key === "e") {
+      // Cmd+E: toggle edit mode (only when file loaded)
+      e.preventDefault();
+      if (!s.loaded) return;
+      if (s.editMode) {
+        window.dispatchEvent(new CustomEvent("yiwo-exit-edit"));
+      } else {
+        window.dispatchEvent(new CustomEvent("yiwo-enter-edit"));
+      }
+    } else if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+      // Cmd+S: save (only meaningful in edit mode with dirty=true)
+      e.preventDefault();
+      if (s.editMode && s.dirty) {
+        window.dispatchEvent(new CustomEvent("yiwo-save-edit"));
+      } else if (s.editMode) {
+        showToast("无修改");
+      } else {
+        showToast("当前不在编辑模式");
+      }
     } else if (e.key === "Escape" && !e.metaKey && !e.ctrlKey) {
-      // Esc: close search if open. Plain Esc only — modifier-combos are
+      // Esc: first try exiting edit mode (when focus is in editor textarea);
+      // otherwise close search bar. Plain Esc only — modifier-combos are
       // typically consumed by the OS / menu bar.
+      if (s.editMode && document.activeElement?.id === "editor-textarea") {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("yiwo-exit-edit"));
+        return;
+      }
       if (window.__search && s.search.open) {
         e.preventDefault();
         window.__search.close();

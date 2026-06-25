@@ -136,3 +136,46 @@ document.addEventListener("copy", (e) => {
     e.preventDefault();
   }
 });
+
+// Edit-mode event wiring (Task 8): toolbar / shortcuts dispatch these
+// CustomEvents; main.js is the single point that talks to the Go backend.
+window.addEventListener("yiwo-enter-edit", async () => {
+  const s = getState();
+  if (s.editMode) return;
+  const res = await api.beginEdit();
+  if (!res.ok) {
+    showToast(res.error || "无法进入编辑模式", { kind: "error" });
+    return;
+  }
+  setState({ editMode: true, dirty: false });
+});
+
+window.addEventListener("yiwo-exit-edit", async () => {
+  const s = getState();
+  if (!s.editMode) return;
+  if (s.dirty) {
+    const ok = confirm("当前编辑有未保存修改，确定丢弃？");
+    if (!ok) return;
+  }
+  // Tell the backend we're done (resumes fsnotify watcher); ignore result
+  // since user is leaving edit mode regardless.
+  await api.endEdit();
+  await api.setDirty(false);
+  setState({ editMode: false, dirty: false });
+});
+
+window.addEventListener("yiwo-save-edit", async () => {
+  const s = getState();
+  if (!s.editMode || !s.dirty) return;
+  const res = await api.save(s.content);
+  if (res.ok) {
+    setState({ dirty: false });
+    showToast("已保存");
+  } else if (res.code === "EXTERNAL_MODIFIED") {
+    // Handled in Task 9 (conflict dialog)
+    showToast("外部已修改，请选择处理方式", { kind: "warning" });
+    window.dispatchEvent(new CustomEvent("yiwo-conflict-detected"));
+  } else {
+    showToast(`保存失败：${res.error || "未知错误"}`, { kind: "error" });
+  }
+});
