@@ -104,6 +104,17 @@ export function init() {
       statusBar.classList.add("hidden");
     }
 
+    // Edit mode branch: delegate to editor view, then attach listeners.
+    // Dynamic import keeps editor.js out of the initial bundle for users who
+    // never enter edit mode.
+    if (s.editMode) {
+      import("./editor.js").then((mod) => {
+        view.innerHTML = mod.render();
+        mod.attachEventListeners();
+      });
+      return;
+    }
+
     // Capture scroll position BEFORE innerHTML rewrite (innerHTML reset
     // drops scroll position to 0).
     const prevScrollTop = view.scrollTop;
