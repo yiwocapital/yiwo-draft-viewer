@@ -19,6 +19,8 @@ const state = {
     term: "",       // current search query (trimmed); empty = no highlights
     currentIndex: 0, // 0-based index into the live match list (NOT stored)
   },
+  editMode: false,
+  dirty: false,
 };
 
 const subs = new Set();
