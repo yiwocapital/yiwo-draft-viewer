@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -31,6 +33,11 @@ type Service struct {
 	repo            *git.Repo
 	watcher         *fsnotify.Watcher
 	foldComments    bool // NEW
+	// edit-mode state
+	editing       bool   // whether in edit mode (fsnotify paused)
+	dirty         bool   // mirror of frontend dirty, for OnBeforeClose
+	editStartHash string // sha256(s.content) at BeginEdit time
+	watcherPaused bool   // current pause state (== editing in v1)
 }
 
 func NewService() *Service {
@@ -469,3 +476,79 @@ func splitOutComments(segs []model.DiffSegment) []model.DiffSegment {
 }
 
 // silence unused-import warning when fmt not referenced elsewhere.
+
+// Save writes content to s.currentPath via atomic tmp+rename. If the file on
+// disk has been modified since editing began (sha256 mismatch with
+// editStartHash), returns Code="EXTERNAL_MODIFIED" without writing. Frontend
+// must catch this and show a 3-option conflict dialog.
+func (s *Service) Save(content string) model.Result {
+	return s.saveInternal(content, false)
+}
+
+// SaveOverwrite is the same as Save but bypasses the hash check. Used when
+// the user explicitly chose "overwrite external changes" in the conflict UI.
+func (s *Service) SaveOverwrite(content string) model.Result {
+	return s.saveInternal(content, true)
+}
+
+func (s *Service) saveInternal(content string, force bool) model.Result {
+	if s.currentPath == "" {
+		return model.Result{Ok: false, Error: "no file open"}
+	}
+
+	if !force {
+		diskContent, err := file.Load(s.currentPath)
+		if err != nil {
+			return model.Result{Ok: false, Error: err.Error()}
+		}
+		h := sha256.Sum256([]byte(diskContent))
+		currentHash := hex.EncodeToString(h[:])
+		if currentHash != s.editStartHash {
+			return model.Result{
+				Ok:    false,
+				Error: "external_modified",
+				Code:  "EXTERNAL_MODIFIED",
+			}
+		}
+	}
+
+	// Atomic write: tmp file + rename
+	tmpPath := s.currentPath + ".yiwo-tmp"
+	if err := os.WriteFile(tmpPath, []byte(content), 0644); err != nil {
+		os.Remove(tmpPath)
+		return model.Result{Ok: false, Error: err.Error()}
+	}
+	if err := os.Rename(tmpPath, s.currentPath); err != nil {
+		os.Remove(tmpPath)
+		return model.Result{Ok: false, Error: err.Error()}
+	}
+
+	// Update in-memory state
+	s.content = content
+	fm, body := file.ParseFrontmatter(content)
+	s.title = fm.Title
+	s.summary = fm.Summary
+	s.body = body
+	s.hasFm = fm.HasFrontmatter
+	h := sha256.Sum256([]byte(content))
+	s.editStartHash = hex.EncodeToString(h[:])
+	s.dirty = false
+
+	// Notify frontend to refresh commit list (new "WORKING" entry will appear)
+	if s.ctx != nil {
+		fm2, _ := file.ParseFrontmatter(content)
+		repo, _ := git.Open(s.currentPath)
+		runtime.EventsEmit(s.ctx, "reloaded", map[string]interface{}{
+			"path":           s.currentPath,
+			"content":        content,
+			"title":          fm2.Title,
+			"summary":        fm2.Summary,
+			"hasFrontmatter": fm2.HasFrontmatter,
+			"charCount":      file.CountChars(content),
+			"hasGit":         repo != nil,
+			"fontSize":       s.cfg.FontSize,
+		})
+	}
+
+	return model.Result{Ok: true}
+}

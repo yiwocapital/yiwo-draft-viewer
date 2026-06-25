@@ -37,4 +37,5 @@ type Result struct {
 	Ok    bool        `json:"ok"`
 	Data  interface{} `json:"data,omitempty"`
 	Error string      `json:"error,omitempty"`
+	Code  string      `json:"code,omitempty"` // machine-readable code, e.g. "EXTERNAL_MODIFIED"
 }

@@ -1,6 +1,8 @@
 package app
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"path/filepath"
 	"strings"
@@ -149,4 +151,113 @@ func TestCleanForCopy(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSave_AtomicWrite(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.md")
+	if err := os.WriteFile(path, []byte("original"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	s := NewService()
+	s.SetConfigDir(dir)
+	s.OpenFile(path)
+	s.editStartHash = sha256Hex("original")
+
+	res := s.Save("modified content")
+	if !res.Ok {
+		t.Fatalf("expected ok, got error: %s", res.Error)
+	}
+
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != "modified content" {
+		t.Errorf("file content: got %q, want %q", got, "modified content")
+	}
+
+	// tmp file must be cleaned up
+	if _, err := os.Stat(path + ".yiwo-tmp"); !os.IsNotExist(err) {
+		t.Errorf("tmp file should not exist after Save")
+	}
+}
+
+func TestSave_ExternalModified(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.md")
+	if err := os.WriteFile(path, []byte("original"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	s := NewService()
+	s.SetConfigDir(dir)
+	s.OpenFile(path)
+	s.editStartHash = sha256Hex("original")
+
+	// Simulate external modification
+	if err := os.WriteFile(path, []byte("changed externally"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	res := s.Save("my edit")
+	if res.Ok {
+		t.Fatal("expected failure due to external modification")
+	}
+	if res.Code != "EXTERNAL_MODIFIED" {
+		t.Errorf("expected code EXTERNAL_MODIFIED, got %q", res.Code)
+	}
+
+	// File should not have been overwritten
+	got, _ := os.ReadFile(path)
+	if string(got) != "changed externally" {
+		t.Errorf("file should be unchanged after conflict, got %q", got)
+	}
+}
+
+func TestSave_DirtyCleared(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.md")
+	if err := os.WriteFile(path, []byte("original"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	s := NewService()
+	s.SetConfigDir(dir)
+	s.OpenFile(path)
+	s.editStartHash = sha256Hex("original")
+	s.dirty = true
+
+	s.Save("modified")
+
+	if s.dirty {
+		t.Error("expected dirty=false after successful Save")
+	}
+}
+
+func TestSave_OverwritesExternalWhenForced(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.md")
+	if err := os.WriteFile(path, []byte("original"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	s := NewService()
+	s.SetConfigDir(dir)
+	s.OpenFile(path)
+	s.editStartHash = sha256Hex("original")
+
+	// Simulate external modification
+	os.WriteFile(path, []byte("changed"), 0644)
+
+	res := s.SaveOverwrite("forced write")
+	if !res.Ok {
+		t.Fatalf("expected ok, got error: %s", res.Error)
+	}
+	got, _ := os.ReadFile(path)
+	if string(got) != "forced write" {
+		t.Errorf("file should be overwritten, got %q", got)
+	}
+}
+
+func sha256Hex(s string) string {
+	h := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(h[:])
 }
