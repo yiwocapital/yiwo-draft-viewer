@@ -72,6 +72,24 @@ if (window.runtime && window.runtime.EventsOn) {
   }
   window.runtime.EventsOn("reloaded", reloadFromBackend);
   window.runtime.EventsOn("reload", reloadFromBackend);
+  // OnBeforeClose "保存" branch (main.go) emits this when the user picks
+  // "保存" in the dirty-quit dialog. Save current buffer; on success,
+  // SaveAndClose triggers runtime.Quit. On failure (e.g. EXTERNAL_MODIFIED),
+  // show a toast and keep the app open so the user can resolve the conflict.
+  window.runtime.EventsOn("request-save-before-close", async () => {
+    const s = getState();
+    if (!s.editMode) return;
+    const res = await api.save(s.content);
+    if (res.ok) {
+      setState({ dirty: false });
+      await api.saveAndClose(s.content);
+    } else if (res.code === "EXTERNAL_MODIFIED") {
+      // Don't auto-close on conflict — let user resolve via the conflict UI.
+      showToast("保存失败：外部已修改，请先在 app 内处理", { kind: "error" });
+    } else {
+      showToast(`保存失败：${res.error || "未知错误"}`, { kind: "error" });
+    }
+  });
   window.runtime.EventsOn("close-file", () => {
     // Reset to empty state
     document.getElementById("app").classList.add("empty");

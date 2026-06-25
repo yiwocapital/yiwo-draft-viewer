@@ -38,4 +38,13 @@ export const api = {
   save: async (content) => toResult(await call("Save", content)),
   saveOverwrite: async (content) => toResult(await call("SaveOverwrite", content)),
   isDirty: () => call("IsDirty"),
+  // SaveAndClose is on the appWrapper (not Service), bound via Wails as
+  // window.go.main.appWrapper.SaveAndClose. The Go side re-saves content
+  // (idempotent) and then calls runtime.Quit on success. The function returns
+  // void; we return {ok: true} optimistically. If the call rejects, await
+  // propagates it.
+  saveAndClose: async (content) => {
+    await window.go.main.appWrapper.SaveAndClose(content);
+    return { ok: true };
+  },
 };
