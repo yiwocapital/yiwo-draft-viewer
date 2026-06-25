@@ -197,3 +197,46 @@ window.addEventListener("yiwo-save-edit", async () => {
     showToast(`保存失败：${res.error || "未知错误"}`, { kind: "error" });
   }
 });
+
+// Task 9: Conflict dialog — three resolution paths when Save detects the file
+// was modified externally during edit. Uses two sequential native confirm()
+// dialogs (v1): overwrite / reload / cancel.
+window.addEventListener("yiwo-conflict-detected", async () => {
+  const choice = await new Promise((resolve) => {
+    // First: overwrite external?
+    const overwrite = confirm("外部文件已修改。\n\n点击「确定」覆盖外部修改（外部改动将丢失）。\n点击「取消」查看下一步选项。");
+    if (overwrite) {
+      resolve("overwrite");
+      return;
+    }
+    // Second: reload from disk?
+    const reload = confirm("点击「确定」放弃本地修改，重新读入外部版本。\n点击「取消」留在编辑模式（保持本地修改）。");
+    if (reload) {
+      resolve("reload");
+    } else {
+      resolve("cancel");
+    }
+  });
+
+  const s = getState();
+  if (choice === "overwrite") {
+    const res = await api.saveOverwrite(s.content);
+    if (res.ok) {
+      setState({ dirty: false });
+      showToast("已覆盖外部修改");
+    } else {
+      showToast(`保存失败：${res.error || "未知错误"}`, { kind: "error" });
+    }
+  } else if (choice === "reload") {
+    // Exit edit mode (endEdit triggers OpenFile internally), then refresh
+    // the frontend store from disk so commit list and content update.
+    await api.endEdit();
+    await api.setDirty(false);
+    setState({ editMode: false, dirty: false });
+    if (window.__currentPath && window.__openFile) {
+      await window.__openFile(window.__currentPath);
+    }
+    showToast("已重新读入外部版本");
+  }
+  // "cancel": do nothing, stay in edit mode
+});
