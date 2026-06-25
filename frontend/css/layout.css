@@ -19,6 +19,7 @@ body {
   overflow: auto;
   padding: 32px 48px;
   border-right: 1px solid var(--border);
+  background: #ffffff;
 }
 
 .sidebar {
@@ -29,6 +30,24 @@ body {
   background: var(--hover);
   overflow: hidden;
   padding-top: 28px;  /* push content below the transparent macOS chrome title bar */
+}
+
+/* macOS chrome area overlay: paint a uniform gray strip behind the
+ * transparent macOS title bar. Fixed position so scrolling content in
+ * the main view stays hidden behind it (no transparency leaks).
+ * Pointer events disabled so the macOS chrome (drawn above) handles
+ * drag/clicks. z-index 1 sits above default content (z-index auto = 0)
+ * but below modal (100) and toast (1000). */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  background: #ececec;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .empty-hint {
