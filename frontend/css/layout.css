@@ -5,12 +5,21 @@
   height: 100vh;
 }
 
+/* macOS title bar area: paint a uniform gray strip behind the transparent
+ * chrome so the title bar doesn't show a split white/gray based on what's
+ * underneath. Body bg = macOS title bar gray; main view / sidebar override
+ * below this strip with their own backgrounds. */
+body {
+  background: #ececec;
+}
+
 .main-view {
   grid-row: 1;
   grid-column: 1;
   overflow: auto;
   padding: 32px 48px;
   border-right: 1px solid var(--border);
+  background: linear-gradient(to bottom, #ececec 0px, #ececec 28px, #ffffff 28px, #ffffff 100%);
 }
 
 .sidebar {
@@ -18,7 +27,7 @@
   grid-column: 2;
   display: flex;
   flex-direction: column;
-  background: var(--hover);
+  background: linear-gradient(to bottom, #ececec 0px, #ececec 28px, var(--hover) 28px, var(--hover) 100%);
   overflow: hidden;
 }
 
