@@ -334,6 +334,12 @@ func (s *Service) startWatcher(path string) {
 				if !ok {
 					return
 				}
+				// Drop events while in edit mode — conflicts surface at Save
+				// time via hash check. Avoids Save → fsnotify → OpenFile →
+				// textarea-wipe race.
+				if s.watcherPaused {
+					continue
+				}
 				if debounce != nil {
 					debounce.Stop()
 				}
@@ -476,6 +482,44 @@ func splitOutComments(segs []model.DiffSegment) []model.DiffSegment {
 }
 
 // silence unused-import warning when fmt not referenced elsewhere.
+
+// BeginEdit records the current file hash and pauses the fsnotify watcher.
+// While editing, external file modifications are silently dropped (not
+// reloaded into the editor). Conflicts surface at Save time via hash check.
+func (s *Service) BeginEdit() model.Result {
+	if s.currentPath == "" {
+		return model.Result{Ok: false, Error: "no file open"}
+	}
+	h := sha256.Sum256([]byte(s.content))
+	s.editStartHash = hex.EncodeToString(h[:])
+	s.editing = true
+	s.watcherPaused = true
+	s.dirty = false
+	return model.Result{Ok: true}
+}
+
+// EndEdit exits edit mode and resumes the fsnotify watcher. Calls OpenFile
+// once to pick up any external changes that happened during edit.
+func (s *Service) EndEdit() model.Result {
+	s.editing = false
+	s.watcherPaused = false
+	s.dirty = false
+	s.editStartHash = ""
+	if s.currentPath != "" {
+		res := s.OpenFile(s.currentPath)
+		if s.ctx != nil && res.Ok {
+			runtime.EventsEmit(s.ctx, "reloaded", res.Data)
+		}
+	}
+	return model.Result{Ok: true}
+}
+
+// SetDirty updates the backend dirty mirror. Called by frontend on every
+// textarea input event (first time) and after Save success. Required because
+// OnBeforeClose (backend-only hook) needs to know dirty state synchronously.
+func (s *Service) SetDirty(b bool) {
+	s.dirty = b
+}
 
 // Save writes content to s.currentPath via atomic tmp+rename. If the file on
 // disk has been modified since editing began (sha256 mismatch with

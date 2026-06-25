@@ -261,3 +261,70 @@ func sha256Hex(s string) string {
 	h := sha256.Sum256([]byte(s))
 	return hex.EncodeToString(h[:])
 }
+
+func TestBeginEndEdit_PausesWatcher(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.md")
+	if err := os.WriteFile(path, []byte("original"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	s := NewService()
+	s.SetConfigDir(dir)
+	s.OpenFile(path)
+
+	s.BeginEdit()
+
+	if !s.editing {
+		t.Error("expected editing=true after BeginEdit")
+	}
+	if !s.watcherPaused {
+		t.Error("expected watcherPaused=true after BeginEdit")
+	}
+	if s.editStartHash == "" {
+		t.Error("expected editStartHash to be set")
+	}
+	if s.dirty {
+		t.Error("expected dirty=false after BeginEdit")
+	}
+
+	s.EndEdit()
+
+	if s.editing {
+		t.Error("expected editing=false after EndEdit")
+	}
+	if s.watcherPaused {
+		t.Error("expected watcherPaused=false after EndEdit")
+	}
+}
+
+func TestSave_DuringEdit_UpdatesHash(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.md")
+	if err := os.WriteFile(path, []byte("v1"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	s := NewService()
+	s.SetConfigDir(dir)
+	s.OpenFile(path)
+
+	s.BeginEdit()
+	hashBefore := s.editStartHash
+
+	s.Save("v2")
+
+	if s.editStartHash == hashBefore {
+		t.Error("expected editStartHash to advance after Save")
+	}
+}
+
+func TestSetDirty(t *testing.T) {
+	s := NewService()
+	s.SetDirty(true)
+	if !s.dirty {
+		t.Error("expected dirty=true")
+	}
+	s.SetDirty(false)
+	if s.dirty {
+		t.Error("expected dirty=false")
+	}
+}
