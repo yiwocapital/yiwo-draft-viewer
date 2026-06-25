@@ -53,6 +53,16 @@ func (a *appWrapper) SaveAndClose(content string) {
 	}
 }
 
+// Quit requests app shutdown. Called by the frontend after the user picks
+// "discard" in the dirty-quit dialog (or anytime the frontend wants to
+// trigger a clean exit without going through the OnBeforeClose dialog flow).
+func (a *appWrapper) Quit() {
+	if a.ctx == nil {
+		return
+	}
+	runtime.Quit(a.ctx)
+}
+
 func main() {
 	svc := app.NewService()
 	wrapper := &appWrapper{svc: svc}
@@ -72,7 +82,9 @@ func main() {
 		}
 	})
 	fileMenu.AddText("Close", keys.CmdOrCtrl("w"), func(cd *menu.CallbackData) {
-		svc.CloseFile()
+		// Only emit; don't run svc.CloseFile yet. Frontend listener checks
+		// dirty state and decides whether to call api.closeFile() to clear
+		// backend state.
 		runtime.EventsEmit(svc.Ctx(), "close-file")
 	})
 
@@ -112,47 +124,24 @@ func main() {
 			})
 		},
 		OnBeforeClose: func(ctx context.Context) (prevent bool) {
-			// Capture the final window state right before the app exits, so
-			// the very last position/size is persisted even if no resize or
-			// mouseup fired between the user's last action and the close.
+			// Capture the final window state right before exit, so the very
+			// last position/size is persisted even if no resize or mouseup
+			// fired between the user's last action and the close.
 			svc.WindowChanged()
 
-			// Dirty-quit intercept: if there's an unsaved edit, ask the user
-			// what to do before allowing close. DefaultButton="保存" matches
-			// macOS HIG (destructive actions require explicit choice).
+			// Not dirty → allow close (no dialog needed).
 			if !svc.IsDirty() {
 				return false
 			}
 
-			selection, err := runtime.MessageDialog(ctx, runtime.MessageDialogOptions{
-				Type:          runtime.QuestionDialog,
-				Title:         "未保存的修改",
-				Message:       "当前编辑有未保存的修改，是否保存？",
-				Buttons:       []string{"保存", "丢弃", "取消"},
-				DefaultButton: "保存",
-				CancelButton:  "取消",
-			})
-			if err != nil {
-				// Dialog failed (rare). Stay open so user can retry.
-				return true
-			}
-
-			switch selection {
-			case "保存":
-				// Ask frontend to save current buffer and then close. The
-				// frontend calls App.SaveAndClose on success, which calls
-				// runtime.Quit. If save fails, frontend shows error toast
-				// and the app stays open.
-				runtime.EventsEmit(ctx, "request-save-before-close", nil)
-				return true
-			case "丢弃":
-				// Drop changes and quit immediately.
-				svc.SetDirty(false)
-				runtime.Quit(ctx)
-				return false
-			default: // "取消" or empty
-				return true
-			}
+			// Dirty → emit event to frontend; frontend will run a confirm()
+			// and either call appWrapper.Quit() (discard), SaveAndClose
+			// (save), or do nothing (cancel). Keep open until frontend
+			// resolves. The previous MessageDialog-based flow silently
+			// failed in some Wails v2 + macOS combinations, so we moved
+			// the prompt to the frontend.
+			runtime.EventsEmit(ctx, "request-dirty-quit")
+			return true
 		},
 		DragAndDrop: &options.DragAndDrop{
 			EnableFileDrop:     true,

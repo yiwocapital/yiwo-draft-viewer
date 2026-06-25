@@ -72,33 +72,61 @@ if (window.runtime && window.runtime.EventsOn) {
   }
   window.runtime.EventsOn("reloaded", reloadFromBackend);
   window.runtime.EventsOn("reload", reloadFromBackend);
-  // OnBeforeClose "保存" branch (main.go) emits this when the user picks
-  // "保存" in the dirty-quit dialog. Save current buffer; on success,
-  // SaveAndClose triggers runtime.Quit. On failure (e.g. EXTERNAL_MODIFIED),
-  // show a toast and keep the app open so the user can resolve the conflict.
-  window.runtime.EventsOn("request-save-before-close", async () => {
+  // OnBeforeClose intercepts Cmd+Q with unsaved edits and emits this event.
+  // We previously used Wails runtime.MessageDialog here, but it silently
+  // failed on some Wails v2 + macOS combos. Native JS confirm() works
+  // reliably inside the webview, so the dirty-quit prompt now lives here.
+  window.runtime.EventsOn("request-dirty-quit", async () => {
     const s = getState();
-    if (!s.editMode) return;
-    const res = await api.save(s.content);
-    if (res.ok) {
-      setState({ dirty: false });
-      await api.saveAndClose(s.content);
-    } else if (res.code === "EXTERNAL_MODIFIED") {
-      // Don't auto-close on conflict — let user resolve via the conflict UI.
-      showToast("保存失败：外部已修改，请先在 app 内处理", { kind: "error" });
-    } else {
-      showToast(`保存失败：${res.error || "未知错误"}`, { kind: "error" });
+    // Race: dirty may have been cleared between OnBeforeClose firing and
+    // this listener running (e.g., SaveAndClose completed in another path).
+    if (!s.dirty) {
+      api.quit();
+      return;
     }
+
+    // 3-option dialog using sequential confirm() calls (same pattern as
+    // yiwo-conflict-detected). Native JS confirm() works reliably on macOS
+    // webview; Wails MessageDialog from OnBeforeClose goroutine does not.
+    const choice = await new Promise((resolve) => {
+      // Step 1: 保存 or 取消 (to see next option)?
+      const save = confirm("当前编辑有未保存修改。\n\n点击「确定」保存后退出。\n点击「取消」查看下一步选项。");
+      if (save) { resolve("save"); return; }
+      // Step 2: 丢弃 or 取消 (cancel and stay in app)?
+      const discard = confirm("点击「确定」放弃修改并退出。\n点击「取消」留在 app。");
+      if (discard) { resolve("discard"); return; }
+      resolve("cancel");
+    });
+
+    if (choice === "save") {
+      // SaveAndClose writes content via Service.Save then runtime.Quit.
+      // If Save fails (e.g., EXTERNAL_MODIFIED), frontend should NOT quit —
+      // user needs to resolve the conflict.
+      await api.saveAndClose(s.content);
+    } else if (choice === "discard") {
+      // Clear backend dirty mirror so OnBeforeClose won't re-trigger
+      // dirty prompt on the next close attempt.
+      await api.setDirty(false);
+      // Tell backend to quit.
+      api.quit();
+    }
+    // "cancel": do nothing. App stays open. Backend's OnBeforeClose
+    // already returned prevent=true, so the original close attempt was
+    // intercepted. Next Cmd+Q will re-trigger this whole flow.
   });
-  window.runtime.EventsOn("close-file", () => {
-    // If dirty, confirm before discarding (mirrors Cmd+Q dirty-quit UX).
+  window.runtime.EventsOn("close-file", async () => {
     if (getState().dirty) {
       const ok = confirm("当前编辑有未保存修改，确定关闭？\n（修改将被丢弃）");
       if (!ok) return;
-      // Tell backend to reset its dirty mirror (in case SaveAndClose isn't used)
-      api.setDirty(false).catch(() => {});
     }
-    // Reset to empty state (explicitly clear editMode + dirty for Issue #4)
+    // Tell backend to clear state (this was previously done by the Go
+    // menu callback; now it's frontend-driven so the dirty prompt can
+    // run first).
+    try {
+      await api.closeFile();
+    } catch (e) {
+      // ignore — UI state still gets reset below
+    }
     document.getElementById("app").classList.add("empty");
     setState({
       loaded: false, path: "", hasGit: false, hasFrontmatter: false,

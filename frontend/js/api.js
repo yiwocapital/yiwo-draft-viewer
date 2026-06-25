@@ -38,6 +38,13 @@ export const api = {
   save: async (content) => toResult(await call("Save", content)),
   saveOverwrite: async (content) => toResult(await call("SaveOverwrite", content)),
   isDirty: () => call("IsDirty"),
+  closeFile: () => call("CloseFile"),
+  // Quit calls appWrapper.Quit on the Go side, which calls runtime.Quit on
+  // its captured context. Used by the dirty-quit "discard" branch and any
+  // other frontend-driven exit.
+  quit: () => {
+    return window.go.main.appWrapper.Quit();
+  },
   // SaveAndClose is on the appWrapper (not Service), bound via Wails as
   // window.go.main.appWrapper.SaveAndClose. The Go side re-saves content
   // (idempotent) and then calls runtime.Quit on success. The function returns
