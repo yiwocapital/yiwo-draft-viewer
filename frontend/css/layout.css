@@ -19,7 +19,6 @@ body {
   overflow: auto;
   padding: 32px 48px;
   border-right: 1px solid var(--border);
-  background: linear-gradient(to bottom, #ececec 0px, #ececec 28px, #ffffff 28px, #ffffff 100%);
 }
 
 .sidebar {
@@ -27,8 +26,9 @@ body {
   grid-column: 2;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(to bottom, #ececec 0px, #ececec 28px, var(--hover) 28px, var(--hover) 100%);
+  background: var(--hover);
   overflow: hidden;
+  padding-top: 28px;  /* push content below the transparent macOS chrome title bar */
 }
 
 .empty-hint {
